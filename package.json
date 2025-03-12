@@ -4,7 +4,8 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"lint": "eslint --ext .js,.ts,.jsx,.tsx --fix --quiet ./packages"
+		"lint": "eslint --ext .js,.ts,.jsx,.tsx --fix --quiet ./packages",
+		"prepare": "husky install"
 	},
 	"keywords": [],
 	"author": "",
@@ -19,8 +20,9 @@
 		"eslint-config-prettier": "^10.1.1",
 		"eslint-plugin-prettier": "^5.2.3",
 		"globals": "^16.0.0",
-		"husky": "^9.1.7",
+		"husky": "^8.0.0",
 		"prettier": "^3.5.3",
+		"rollup": "^4.35.0",
 		"typescript-eslint": "^8.26.1"
 	}
 }

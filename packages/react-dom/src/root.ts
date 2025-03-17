@@ -9,7 +9,7 @@ import { Container } from "./hostConfig";
 
 export function createRoot(container: Container) {
   const root = createContainer(container);
-
+  //FiberRootNode
   return {
     render(element: ReactElementType) {
       return updateContainer(element, root);

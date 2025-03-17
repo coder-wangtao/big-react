@@ -6,15 +6,18 @@ import { MutationMask, NoFlags } from "./fiberFlags";
 import { HostRoot } from "./workTags";
 let workInProgress: FiberNode | null;
 
+// 初始化 workInProgress 变量
 function prepareFreshStack(root: FiberRootNode) {
   workInProgress = createWorkInProgress(root.current, {});
 }
 
 function renderRoot(root: FiberRootNode) {
-  //初始化
+  // 初始化 workInProgress 变量
   prepareFreshStack(root);
+
   do {
     try {
+      // 深度优先遍历
       workLoop();
       break;
     } catch (e) {
@@ -24,8 +27,9 @@ function renderRoot(root: FiberRootNode) {
       workInProgress = null;
     }
   } while (true);
-
+  // 创建根 Fiber 树的 Root Fiber
   const finishedWork = root.current.alternate;
+  // 提交阶段的入口函数
   root.finishedWork = finishedWork;
 
   commitRoot(root);
@@ -51,11 +55,13 @@ function commitRoot(root: FiberRootNode) {
   const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 
   if (subtreeHasEffect || rootHasEffect) {
-    //beforeMutation
+    // TODO: BeforeMutation
+
     //mutation Placement
     commitMutationEffects(finishedWork);
+    // Fiber 树切换，workInProgress 变成 current
     root.current = finishedWork;
-    //layout
+    // TODO: Layout
   } else {
     root.current = finishedWork;
   }
@@ -64,7 +70,8 @@ function commitRoot(root: FiberRootNode) {
 export function scheduleUpdateOnFiber(fiber: FiberNode) {
   //调度功能
   //fiberRootNode
-  const root = markUpdateFromFiberToRoot(fiber);
+  const root: FiberRootNode = markUpdateFromFiberToRoot(fiber);
+
   renderRoot(root);
 }
 
@@ -81,6 +88,7 @@ function markUpdateFromFiberToRoot(fiber: FiberNode) {
   return null;
 }
 
+// 深度优先遍历，向下递归子节点
 function workLoop() {
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
@@ -88,25 +96,32 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
+  // 比较并返回子 FiberNode
   const next = beginWork(fiber);
+
   fiber.memoizedProps = fiber.pendingProps;
   if (next === null) {
+    // 没有子节点，则遍历兄弟节点或父节点
     completeUnitOfWork(fiber);
   } else {
+    // 有子节点，继续向下深度遍历
     workInProgress = next;
   }
 }
 
+// 深度优先遍历兄弟节点或父节点
 function completeUnitOfWork(fiber: FiberNode) {
   let node: FiberNode | null = fiber;
   do {
+    // 生成更新计划
     completeWork(node);
+    // 有兄弟节点，则遍历兄弟节点
     const sibling = node.sibling;
     if (sibling !== null) {
       workInProgress = sibling;
       return;
     }
-
+    // 否则向上返回，遍历父节点
     node = node.return;
     workInProgress = node;
   } while (node !== null);

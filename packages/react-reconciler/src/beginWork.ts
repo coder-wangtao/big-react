@@ -4,7 +4,6 @@ import { HostComponent, HostRoot, HostText } from "./workTags";
 import { ReactElementType } from "shared/ReactTypes";
 import { mountChildFibers, reconcileChildFibers } from "./childFibers";
 
-// 比较并返回子 FiberNode
 // beginWork 函数在向下遍历阶段执行，根据 Fiber 节点的类型（HostRoot、HostComponent、HostText）
 // 分发任务给不同的处理函数，处理具体节点类型的更新逻辑：
 
@@ -24,7 +23,27 @@ import { mountChildFibers, reconcileChildFibers } from "./childFibers";
 // 表示文本节点，即 DOM 中的文本内容，例如 <p>123</p> 中的 123；
 // 调用 updateHostText 函数，协调处理文本节点的内容更新；
 // 返回 null 表示已经是叶子节点，没有子节点了；
+
+// <A>
+//   <B />
+// </A>;
+// 当进入A的beginWork时，通过对比B current fiberNode 与 B的reactElement，生成对应B对应的wip fiberNode
+//此过程只标记结构相关的变化  Placement（插入、移动） ChildDeletion（删除）
+
+//beginWork性能优化
+// <div>
+//   <p>练习时长</p>
+//   <span>两年半</span>
+// </div>
+//理论上mount流程完毕后包含的flags:
+//两年半 Placement
+//span Placement
+//练习时长 Placement
+//p Placement
+//div Placement
+//相当于执行5次Placement,我们可以构建好离屏dom树后，对div执行一次Placement操作
 export const beginWork = (wip: FiberNode) => {
+  // 比较并返回子 FiberNode
   //递归中的递
   switch (wip.tag) {
     case HostRoot:
@@ -57,11 +76,9 @@ function updateHostRoot(wip: FiberNode) {
   wip.memoizedState = memoizedState;
 
   // 处理子节点的更新逻辑
-  const nextChildren = wip.memoizedState;
-  // reconcileChildren 函数的作用是，通过对比子节点的 current FiberNode 与 子节点的 ReactElement，
-  // 来生成子节点对应的 workInProgress FiberNode。（current 是与视图中真实 UI 对应的 Fiber 树，
-  // workInProgress 是触发更新后正在 Reconciler 中计算的 Fiber 树。）
-  reconcileChildren(wip, nextChildren);
+  const nextChildren = wip.memoizedState; //（子对应的reactElement）
+
+  reconcileChildren(wip, nextChildren); //子对应的fiberNode和子对应的reactElement比较 生成新的子child fiberNode
   // 返回新的子节点
   return wip.child;
 }
@@ -69,7 +86,7 @@ function updateHostRoot(wip: FiberNode) {
 function updateHostComponent(wip: FiberNode) {
   const nextProps = wip.pendingProps;
   const nextChildren = nextProps.children;
-  reconcileChildren(wip, nextChildren);
+  reconcileChildren(wip, nextChildren); //子对应的fiberNode和子对应的reactElement比较 生成新的子child fiberNode
   return wip.child;
 }
 // 对比子节点的 current FiberNode 与 子节点的 ReactElement

@@ -32,14 +32,14 @@ function ChildReconciler(shouldTrackEffects: boolean) {
   }
   // 为 Fiber 节点添加更新 flags
   function placeSingleChild(fiber: FiberNode) {
-    // 首屏渲染且追踪副作用时，才添加更新 flags
     if (shouldTrackEffects && fiber.alternate === null) {
+      // 首屏渲染 且 追踪副作用时，才添加更新 flags
       fiber.flags |= Placement;
     }
     return fiber;
   }
 
-  // 闭包，根绝 shouldTrackSideEffects 返回不同 reconcileChildFibers 的实现
+  // 闭包，根据 shouldTrackSideEffects 返回不同 reconcileChildFibers 的实现
   return function reconcileChildFibers(
     returnFiber: FiberNode,
     currentFiber: FiberNode | null,

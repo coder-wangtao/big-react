@@ -1,9 +1,10 @@
 export type Flags = number;
-export const NoFlags = 0b0000001;
-export const Placement = 0b0000010; //跟结构相关
-export const Update = 0b0000100; //跟属性相关
-export const ChildDeletion = 0b0001000; //跟结构相关
-
+export const NoFlags = 0b0000000;
+export const Placement = 0b0000001; //跟结构相关
+export const Update = 0b0000010; //跟属性相关
+export const ChildDeletion = 0b0000100; //跟结构相关
+// react 会为每个节点打上不同的标记。例如，如果节点需要更新，可能会打上更新标记（Update Tag）；
+// 如果节点是新创建的，可能会打上插入标记（Placement Tag）；如果节点被移除，可能会打上删除标记（Deletion Tag）
 export const MutationMask = Placement | Update | ChildDeletion;
 
 // React 利用了 | 运算符的特性来存储 flags，如：

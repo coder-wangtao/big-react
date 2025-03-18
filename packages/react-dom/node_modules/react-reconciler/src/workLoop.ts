@@ -4,7 +4,7 @@ import { completeWork } from "./completeWork";
 import { createWorkInProgress, FiberNode, FiberRootNode } from "./fiber";
 import { MutationMask, NoFlags } from "./fiberFlags";
 import { HostRoot } from "./workTags";
-let workInProgress: FiberNode | null;
+let workInProgress: FiberNode | null;   //workInProgress在global作用域，类似链表的指针，标记当前处理元素的位置
 
 // 初始化 workInProgress 变量
 function prepareFreshStack(root: FiberRootNode) {
@@ -31,7 +31,7 @@ function renderRoot(root: FiberRootNode) {
   const finishedWork = root.current.alternate;
   // 提交阶段的入口函数
   root.finishedWork = finishedWork;
-
+  console.log("finishedWork", finishedWork); // wip fiberNode的树，以及树中flags
   commitRoot(root);
 }
 
@@ -75,6 +75,7 @@ export function scheduleUpdateOnFiber(fiber: FiberNode) {
   renderRoot(root);
 }
 
+// 从触发更新的节点向上遍历到 FiberRootNode
 function markUpdateFromFiberToRoot(fiber: FiberNode) {
   let node = fiber;
   let parent = node.return;
@@ -126,3 +127,6 @@ function completeUnitOfWork(fiber: FiberNode) {
     workInProgress = node;
   } while (node !== null);
 }
+
+// 其中 reconcileChildren 函数的作用是，通过对比子节点的 current FiberNode 与 子节点的 ReactElement，来生成子节点对应的 workInProgress FiberNode。
+// （current 是与视图中真实 UI 对应的 Fiber 树，workInProgress 是触发更新后正在 Reconciler 中计算的 Fiber 树。）

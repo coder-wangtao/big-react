@@ -1,5 +1,12 @@
 import { REACT_ELEMENT_TYPE } from "shared/ReactSymbol";
-import { Type, Key, Ref, Props, ReactElementType } from "shared/ReactTypes";
+import {
+  Type,
+  Key,
+  Ref,
+  Props,
+  ReactElementType,
+  ElementType,
+} from "shared/ReactTypes";
 
 // ReactElement
 
@@ -20,8 +27,16 @@ const ReactElement = function (
   return element;
 };
 
+export function isValidElement(object: any) {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    object.$$typeof === REACT_ELEMENT_TYPE
+  );
+}
+
 export const createElement = (
-  type: ReactElementType,
+  type: ElementType,
   config: any,
   ...maybeChildren: any
 ) => {
@@ -58,7 +73,7 @@ export const createElement = (
   return ReactElement(type, key, ref, props);
 };
 
-export const jsx = (type: ReactElementType, config: any, maybeKey: any) => {
+export const jsx = (type: ElementType, config: any, maybeKey: any) => {
   let key: Key = null;
   const props: Props = {};
   let ref: Ref = null;

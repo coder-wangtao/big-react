@@ -12,6 +12,7 @@ import {
   HostText,
 } from "./workTags";
 import { NoFlags, Update } from "./fiberFlags";
+import { updateFiberProps } from "react-dom/src/SyntheticEvent";
 
 function markUpdate(fiber: FiberNode) {
   fiber.flags |= Update;
@@ -32,6 +33,7 @@ export const completeWork = (wip: FiberNode) => {
       if (current !== null && wip.stateNode) {
         //update
         // TODO: 组件的更新阶段
+        updateFiberProps(wip.stateNode, newProps);
       } else {
         // 首屏渲染阶段
         // 构建 DOM

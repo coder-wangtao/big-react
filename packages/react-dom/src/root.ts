@@ -6,6 +6,7 @@ import {
 } from "react-reconciler/src/fiberReconciler";
 import { ReactElementType } from "shared/ReactTypes";
 import { Container } from "./hostConfig";
+import { initEvent } from "./SyntheticEvent";
 
 /**
  * 创建Fiber根节点并封装为ReactDOMRoot对象的工厂函数
@@ -27,6 +28,7 @@ export function createRoot(container: Container) {
      * 将传入的React元素或组件(children参数)更新或渲染到当前的Fiber树中。
      */
     render(element: ReactElementType) {
+      initEvent(container, "click");
       return updateContainer(element, root);
     },
   };

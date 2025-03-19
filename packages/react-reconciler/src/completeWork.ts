@@ -5,7 +5,12 @@ import {
   createTextInstance,
 } from "hostConfig";
 import { FiberNode } from "./fiber";
-import { HostComponent, HostRoot, HostText } from "./workTags";
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags";
 import { NoFlags } from "./fiberFlags";
 
 // 生成更新计划，计算和收集更新 flags
@@ -54,6 +59,10 @@ export const completeWork = (wip: FiberNode) => {
     // 表示根节点；
     // 会执行一些与根节点相关的最终操作，例如处理根节点的属性，确保整个应用更新完毕；
     case HostRoot:
+      bubbleProperties(wip);
+      return null;
+
+    case FunctionComponent:
       bubbleProperties(wip);
       return null;
 

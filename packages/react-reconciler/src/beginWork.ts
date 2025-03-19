@@ -1,8 +1,14 @@
 import { processUpdateQueue, UpdateQueue } from "./updateQueue";
 import { FiberNode } from "./fiber";
-import { HostComponent, HostRoot, HostText } from "./workTags";
+import {
+  FunctionComponent,
+  HostComponent,
+  HostRoot,
+  HostText,
+} from "./workTags";
 import { ReactElementType } from "shared/ReactTypes";
 import { mountChildFibers, reconcileChildFibers } from "./childFibers";
+import { renderWithHooks } from "./fiberHooks";
 
 // beginWork 函数在向下遍历阶段执行，根据 Fiber 节点的类型（HostRoot、HostComponent、HostText）
 // 分发任务给不同的处理函数，处理具体节点类型的更新逻辑：
@@ -52,6 +58,8 @@ export const beginWork = (wip: FiberNode) => {
       return updateHostComponent(wip);
     case HostText:
       return null;
+    case FunctionComponent:
+      return updateFunctionComponent(wip);
     default:
       if (__DEV__) {
         console.warn("beginWork未实现的类型");
@@ -60,6 +68,12 @@ export const beginWork = (wip: FiberNode) => {
   }
   return null;
 };
+
+function updateFunctionComponent(wip: FiberNode) {
+  const nextChildren = renderWithHooks(wip);
+  reconcileChildren(wip, nextChildren); //子对应的fiberNode和子对应的reactElement比较 生成新的子child fiberNode
+  return wip.child;
+}
 
 function updateHostRoot(wip: FiberNode) {
   // 根据当前节点和工作中节点的状态进行比较，处理属性等更新逻辑

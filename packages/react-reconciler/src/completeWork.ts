@@ -11,7 +11,11 @@ import {
   HostRoot,
   HostText,
 } from "./workTags";
-import { NoFlags } from "./fiberFlags";
+import { NoFlags, Update } from "./fiberFlags";
+
+function markUpdate(fiber: FiberNode) {
+  fiber.flags |= Update;
+}
 
 // 生成更新计划，计算和收集更新 flags
 export const completeWork = (wip: FiberNode) => {
@@ -46,6 +50,12 @@ export const completeWork = (wip: FiberNode) => {
     case HostText:
       if (current !== null && wip.stateNode) {
         // TODO: 组件的更新阶段
+        // update
+        const oldText = current.memoizedProps?.content;
+        const newText = newProps.content;
+        if (oldText !== newText) {
+          markUpdate(wip);
+        }
       } else {
         // 首屏渲染阶段
         // 构建 DOM

@@ -27,6 +27,7 @@ export class FiberNode {
   subtreeFlags: Flags; // 表示子节点的副作用类型，如更新、插入、删除等
 
   updateQueue: any; //更新计划队列
+  deletions: FiberNode[] | null;
 
   constructor(tag: WorkTag, pendingProps: Props, key: Key) {
     this.tag = tag;
@@ -51,6 +52,7 @@ export class FiberNode {
     //副作用
     this.flags = NoFlags; // 表示节点的副作用类型，如更新、插入、删除等
     this.subtreeFlags = NoFlags; // 更新计划队列
+    this.deletions = null;
   }
 }
 
@@ -87,6 +89,7 @@ export const createWorkInProgress = (
     // 将 effect 链表重置为空，以便在更新过程中记录新的副作用
     wip.flags = NoFlags;
     wip.subtreeFlags = NoFlags;
+    wip.deletions = null;
   }
   // 复制当前节点的大部分属性
   wip.type = current.type;

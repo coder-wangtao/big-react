@@ -170,12 +170,13 @@ function getHostParent(fiber: FiberNode): Container | null {
   let parent = fiber.return;
   while (parent) {
     const parentTag = parent.tag;
-    // 处理 Root 节点
+    // 处理原生 DOM 元素节点
+
     if (parentTag === HostComponent) {
       return parent.stateNode as Container;
     }
-    // 处理原生 DOM 元素节点
 
+    // 处理 Root 节点
     if (parentTag === HostRoot) {
       return (parent.stateNode as FiberRootNode).container;
     }
@@ -192,7 +193,7 @@ function appendPlacementNodeIntoContainer(
   finishedWork: FiberNode,
   hostParent: Container,
 ) {
-  // fiber host
+  // div dom节点 或者 233 文本节点
   if (finishedWork.tag === HostComponent || finishedWork.tag === HostText) {
     appendChildToContainer(hostParent, finishedWork.stateNode);
     return;

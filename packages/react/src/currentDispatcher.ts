@@ -12,6 +12,7 @@ export type Dispatch<State> = (action: Action<State>) => void;
 const currentDispatcher: { current: Dispatcher | null } = {
   current: null,
 };
+
 export const resolveDispatcher = (): Dispatcher => {
   const dispatcher = currentDispatcher.current;
 

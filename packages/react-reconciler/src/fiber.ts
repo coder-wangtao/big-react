@@ -45,7 +45,8 @@ export class FiberNode {
     this.ref = null;
     this.pendingProps = pendingProps; //表示节点的新属性，用于在协调过程中进行更新
     this.memoizedProps = null; // 已经更新完的属性
-    this.memoizedState = null; // 更新完成后新的 State
+    this.memoizedState = null; // 更新完成后新的 State 对于HostRoot  第一次null 第二次ReactDom元素 memoizedState是对应的ReactDom元素
+    //  对于函数组件就是hook对象
 
     this.updateQueue = null;
     this.alternate = null; // 指向节点的备份节点，用于在协调过程中进行比较

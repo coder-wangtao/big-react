@@ -11,9 +11,9 @@ import {
   UpdateQueue,
 } from "./updateQueue";
 
-let currentlyRenderingFiber: FiberNode | null = null;
+let currentlyRenderingFiber: FiberNode | null = null; //当前在处理哪个函数式组件
 let workInProgressHook: Hook | null = null;
-let currentHook: Hook | null = null;
+let currentHook: Hook | null = null; //当前在执行哪个hook
 
 const { currentDispatcher } = internals;
 
@@ -26,9 +26,11 @@ interface Hook {
 export function renderWithHooks(wip: FiberNode) {
   //赋值操作
   currentlyRenderingFiber = wip;
+  //重置hooks链表
   wip.memoizedState = null;
 
   const current = wip.alternate;
+
   if (current !== null) {
     // update
     // currentDispatcher.current = HooksDispatcherOnUpdate;
@@ -41,6 +43,7 @@ export function renderWithHooks(wip: FiberNode) {
   const Component = wip.type;
   const props = wip.pendingProps;
   const children = Component(props);
+
   //重置操作
   currentlyRenderingFiber = null;
   return children;
@@ -53,6 +56,7 @@ const HooksDispatcherOnMount: Dispatcher = {
 const HooksDispatcherOnUpdate: Dispatcher = {
   useState: updateState,
 };
+
 function mountState<State>(
   initialState: (() => State) | State,
 ): [State, Dispatch<State>] {
@@ -66,15 +70,22 @@ function mountState<State>(
   }
   const queue = createUpdateQueue<State>();
   hook.updateQueue = queue;
-
+  hook.memoizedState = memoizedState;
   // function App() {
   //   const [x, dispatch] = useState();
   //   window.dispatch = dispatch;
   // }
-
   // dispatch(1111);
 
   // @ts-ignore
+  //参数预置
+  // function add(a, b) {
+  //   return a + b;
+  // }
+
+  // const addFive = add.bind(null, 5);
+  // console.log(addFive(10)); // 输出: 15
+
   const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
   queue.dispatch = dispatch;
   // queue.lastRenderedState = memoizedState;
@@ -89,9 +100,9 @@ function updateState<State>(): [State, Dispatch<State>] {
   const queue = hook.updateQueue as UpdateQueue<State>;
   const pending = queue.shared.pending;
 
-  if(pending !== null){
-    const {memoizedState} = processUpdateQueue(hook.memoizedState,pending)
-    hook.memoizedState = memoizedState
+  if (pending !== null) {
+    const { memoizedState } = processUpdateQueue(hook.memoizedState, pending);
+    hook.memoizedState = memoizedState;
   }
 
   return [hook.memoizedState, queue.dispatch as Dispatch<State>];
@@ -163,6 +174,7 @@ function mountWorkInProgressHook(): Hook {
     updateQueue: null,
     next: null,
   };
+  //当前在处理的Hook
   if (workInProgressHook === null) {
     // mount时 第一个hook
     if (currentlyRenderingFiber === null) {

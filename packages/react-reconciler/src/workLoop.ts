@@ -4,7 +4,7 @@ import { completeWork } from "./completeWork";
 import { createWorkInProgress, FiberNode, FiberRootNode } from "./fiber";
 import { MutationMask, NoFlags } from "./fiberFlags";
 import { HostRoot } from "./workTags";
-let workInProgress: FiberNode | null;   //workInProgress在global作用域，类似链表的指针，标记当前处理元素的位置
+let workInProgress: FiberNode | null; //workInProgress在global作用域，类似链表的指针，标记当前处理元素的位置
 
 // 初始化 workInProgress 变量
 function prepareFreshStack(root: FiberRootNode) {
@@ -30,8 +30,7 @@ function renderRoot(root: FiberRootNode) {
   // 创建根 Fiber 树的 Root Fiber
   const finishedWork = root.current.alternate;
   // 提交阶段的入口函数
-  root.finishedWork = finishedWork;
-  console.log("finishedWork", finishedWork); // wip fiberNode的树，以及树中flags
+  root.finishedWork = finishedWork; // wip fiberNode的树，以及树中flags
   commitRoot(root);
 }
 

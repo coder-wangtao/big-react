@@ -1,30 +1,72 @@
-import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from "shared/ReactSymbol";
+import { REACT_ELEMENT_TYPE } from "shared//ReactSymbol";
 import {
-  Type,
   Key,
+  ElementType,
   Ref,
   Props,
   ReactElementType,
-  ElementType,
 } from "shared/ReactTypes";
 
-// ReactElement
-
 const ReactElement = function (
-  type: Type,
+  type: ElementType,
   key: Key,
   ref: Ref,
   props: Props,
 ): ReactElementType {
-  const element = {
+  const element: ReactElementType = {
     $$typeof: REACT_ELEMENT_TYPE,
-    type,
+    type: type,
     key,
     ref,
     props,
     __mark: "KaSong",
   };
+
   return element;
+};
+
+function hasValidKey(config: any) {
+  return config.key !== undefined;
+}
+
+function hasValidRef(config: any) {
+  return config.ref !== undefined;
+}
+
+export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
+  let key: Key = null;
+  const props: any = {};
+  let ref: Ref = null;
+
+  for (const prop in config) {
+    const val = config[prop];
+    if (prop === "key") {
+      if (hasValidKey(config)) {
+        key = "" + val;
+      }
+      continue;
+    }
+    if (prop === "ref" && val !== undefined) {
+      if (hasValidRef(config)) {
+        ref = val;
+      }
+      continue;
+    }
+    if ({}.hasOwnProperty.call(config, prop)) {
+      props[prop] = val;
+    }
+  }
+
+  const maybeChildrenLength = maybeChildren.length;
+  if (maybeChildrenLength) {
+    // 将多余参数作为children
+    if (maybeChildrenLength === 1) {
+      props.children = maybeChildren[0];
+    } else {
+      props.children = maybeChildren;
+    }
+  }
+  return ReactElement(type, key, ref, props);
 };
 
 export function isValidElement(object: any) {
@@ -35,65 +77,22 @@ export function isValidElement(object: any) {
   );
 }
 
-export const createElement = (
-  type: ElementType,
-  config: any,
-  ...maybeChildren: any
-) => {
+// jsxDEV传入的后续几个参数与jsx不同
+export const jsxDEV = (type: ElementType, config: any) => {
   let key: Key = null;
-  const props: Props = {};
+  const props: any = {};
   let ref: Ref = null;
 
   for (const prop in config) {
     const val = config[prop];
     if (prop === "key") {
-      if (val !== undefined) {
+      if (hasValidKey(config)) {
         key = "" + val;
       }
       continue;
     }
-    if (prop === "ref") {
-      if (val !== undefined) {
-        ref = val;
-      }
-      continue;
-    }
-    if ({}.hasOwnProperty.call(config, prop)) {
-      props[prop] = val;
-    }
-  }
-  const maybeChildrenLength = maybeChildren.length;
-  if (maybeChildrenLength) {
-    if (maybeChildrenLength === 1) {
-      props.children = maybeChildren[0];
-    } else {
-      props.children = maybeChildren;
-    }
-  }
-  return ReactElement(type, key, ref, props);
-};
-
-export const Fragment = REACT_FRAGMENT_TYPE;
-
-export const jsx = (type: ElementType, config: any, maybeKey: any) => {
-  let key: Key = null;
-  const props: Props = {};
-  let ref: Ref = null;
-
-  if (maybeKey !== undefined) {
-    key = "" + maybeKey;
-  }
-
-  for (const prop in config) {
-    const val = config[prop];
-    if (prop === "key") {
-      if (val !== undefined) {
-        key = "" + val;
-      }
-      continue;
-    }
-    if (prop === "ref") {
-      if (val !== undefined) {
+    if (prop === "ref" && val !== undefined) {
+      if (hasValidRef(config)) {
         ref = val;
       }
       continue;
@@ -105,5 +104,3 @@ export const jsx = (type: ElementType, config: any, maybeKey: any) => {
 
   return ReactElement(type, key, ref, props);
 };
-
-export const jsxDEV = jsx;

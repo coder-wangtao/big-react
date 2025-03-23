@@ -1,3 +1,5 @@
-import * as ReactDom from "./src/root";
+/**
+ * 这个文件是为了方便demos下的示例调试用的
+ */
 
-export default ReactDom;
+export { createRoot } from "./src/root";

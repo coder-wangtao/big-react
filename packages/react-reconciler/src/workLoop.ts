@@ -1,131 +1,146 @@
-import { beginWork } from "./beginWork";
-import { commitMutationEffects } from "./commitWork";
-import { completeWork } from "./completeWork";
-import { createWorkInProgress, FiberNode, FiberRootNode } from "./fiber";
-import { MutationMask, NoFlags } from "./fiberFlags";
-import { HostRoot } from "./workTags";
-let workInProgress: FiberNode | null; //workInProgress在global作用域，类似链表的指针，标记当前处理元素的位置
+import { beginWork } from './beginWork';
+import { commitMutationEffects } from './commitWork';
+import { completeWork } from './completeWork';
+import { createWorkInProgress, FiberNode, FiberRootNode } from './fiber';
+import { MutationMask, NoFlags } from './fiberFlags';
+import { HostRoot } from './workTags';
 
-// 初始化 workInProgress 变量
-function prepareFreshStack(root: FiberRootNode) {
-  workInProgress = createWorkInProgress(root.current, {});
+let workInProgress: FiberNode | null = null;
+
+export function scheduleUpdateOnFiber(fiber: FiberNode) {
+	if (__DEV__) {
+		console.log('开始schedule阶段', fiber);
+	}
+	const root = markUpdateLaneFromFiberToRoot(fiber);
+
+	if (root === null) {
+		return;
+	}
+	ensureRootIsScheduled(root);
 }
 
-function renderRoot(root: FiberRootNode) {
-  // 初始化 workInProgress 变量
-  prepareFreshStack(root);
+function markUpdateLaneFromFiberToRoot(fiber: FiberNode) {
+	let node = fiber;
+	let parent = node.return;
+	while (parent !== null) {
+		node = parent;
+		parent = node.return;
+	}
+	if (node.tag === HostRoot) {
+		return node.stateNode;
+	}
+	return null;
+}
 
-  do {
-    try {
-      // 深度优先遍历
-      workLoop();
-      break;
-    } catch (e) {
-      if (__DEV__) {
-        console.warn("workLoop发生错误", e);
-      }
-      workInProgress = null;
-    }
-  } while (true);
-  // 创建根 Fiber 树的 Root Fiber
-  const finishedWork = root.current.alternate;
-  // 提交阶段的入口函数
-  root.finishedWork = finishedWork; // wip fiberNode的树，以及树中flags
-  commitRoot(root);
+function ensureRootIsScheduled(root: FiberRootNode) {
+	// 一些调度行为
+	performSyncWorkOnRoot(root);
+}
+
+function performSyncWorkOnRoot(root: FiberRootNode) {
+	if (__DEV__) {
+		console.log('开始render阶段', root);
+	}
+	// 初始化操作
+	prepareFreshStack(root);
+
+	// render阶段具体操作
+	do {
+		try {
+			workLoop();
+			break;
+		} catch (e) {
+			console.error('workLoop发生错误', e);
+			workInProgress = null;
+		}
+	} while (true);
+
+	if (workInProgress !== null) {
+		console.error('render阶段结束时wip不为null');
+	}
+
+	const finishedWork = root.current.alternate;
+	root.finishedWork = finishedWork;
+
+	// commit阶段操作
+	commitRoot(root);
 }
 
 function commitRoot(root: FiberRootNode) {
-  const finishedWork = root.finishedWork;
-  if (finishedWork === null) {
-    return;
-  }
+	const finishedWork = root.finishedWork;
 
-  if (__DEV__) {
-    console.warn("commit阶段开始", finishedWork);
-  }
+	if (finishedWork === null) {
+		return;
+	}
+	if (__DEV__) {
+		console.log('开始commit阶段', finishedWork);
+	}
+	// 重置
+	root.finishedWork = null;
 
-  //重置
-  root.finishedWork = null;
+	const subtreeHasEffect =
+		(finishedWork.subtreeFlags & MutationMask) !== NoFlags;
+	const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
 
-  //判断三个子阶段需要执行的操作
-  //root flags root subtreeFlags
-  const subtreeHasEffect =
-    (finishedWork.subtreeFlags & MutationMask) !== NoFlags;
-  const rootHasEffect = (finishedWork.flags & MutationMask) !== NoFlags;
+	if (subtreeHasEffect || rootHasEffect) {
+		// 有副作用要执行
 
-  if (subtreeHasEffect || rootHasEffect) {
-    // TODO: BeforeMutation
+		// 阶段1/3:beforeMutation
 
-    //mutation Placement
-    commitMutationEffects(finishedWork);
-    // Fiber 树切换，workInProgress 变成 current
-    root.current = finishedWork;
-    // TODO: Layout
-  } else {
-    root.current = finishedWork;
-  }
+		// 阶段2/3:Mutation
+		commitMutationEffects(finishedWork);
+
+		// Fiber Tree切换
+		root.current = finishedWork;
+
+		// 阶段3:Layout
+	} else {
+		// Fiber Tree切换
+		root.current = finishedWork;
+	}
 }
 
-export function scheduleUpdateOnFiber(fiber: FiberNode) {
-  //调度功能
-  //fiberRootNode
-  const root: FiberRootNode = markUpdateFromFiberToRoot(fiber);
-
-  renderRoot(root);
+function prepareFreshStack(root: FiberRootNode) {
+	if (__DEV__) {
+		console.log('render阶段初始化工作', root);
+	}
+	workInProgress = createWorkInProgress(root.current, {});
 }
 
-// 从触发更新的节点向上遍历到 FiberRootNode
-function markUpdateFromFiberToRoot(fiber: FiberNode) {
-  let node = fiber;
-  let parent = node.return;
-  while (parent !== null) {
-    node = parent;
-    parent = node.return;
-  }
-  if (node.tag === HostRoot) {
-    return node.stateNode;
-  }
-  return null;
-}
-
-// 深度优先遍历，向下递归子节点
 function workLoop() {
-  while (workInProgress !== null) {
-    performUnitOfWork(workInProgress);
-  }
+	while (workInProgress !== null) {
+		performUnitOfWork(workInProgress);
+	}
 }
 
 function performUnitOfWork(fiber: FiberNode) {
-  // 比较并返回子 FiberNode
-  const next = beginWork(fiber);
-
-  fiber.memoizedProps = fiber.pendingProps;
-  if (next === null) {
-    // 没有子节点，则遍历兄弟节点或父节点
-    completeUnitOfWork(fiber);
-  } else {
-    // 有子节点，继续向下深度遍历
-    workInProgress = next;
-  }
+	const next = beginWork(fiber);
+	// 执行完beginWork后，pendingProps 变为 memoizedProps
+	fiber.memoizedProps = fiber.pendingProps;
+	if (next === null) {
+		completeUnitOfWork(fiber);
+	} else {
+		workInProgress = next;
+	}
 }
 
-// 深度优先遍历兄弟节点或父节点
 function completeUnitOfWork(fiber: FiberNode) {
-  let node: FiberNode | null = fiber;
-  do {
-    // 生成更新计划
-    completeWork(node);
-    // 有兄弟节点，则遍历兄弟节点
-    const sibling = node.sibling;
-    if (sibling !== null) {
-      workInProgress = sibling;
-      return;
-    }
-    // 否则向上返回，遍历父节点
-    node = node.return;
-    workInProgress = node;
-  } while (node !== null);
-}
+	let node: FiberNode | null = fiber;
 
-// 其中 reconcileChildren 函数的作用是，通过对比子节点的 current FiberNode 与 子节点的 ReactElement，来生成子节点对应的 workInProgress FiberNode。
-// （current 是与视图中真实 UI 对应的 Fiber 树，workInProgress 是触发更新后正在 Reconciler 中计算的 Fiber 树。）
+	do {
+		const next = completeWork(node);
+
+		if (next !== null) {
+			workInProgress = next;
+			return;
+		}
+
+		const sibling = node.sibling;
+		if (sibling) {
+			workInProgress = sibling;
+			return;
+		}
+		node = node.return;
+		workInProgress = node;
+	} while (node !== null);
+}

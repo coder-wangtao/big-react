@@ -1,128 +1,115 @@
+import { updateFiberProps } from "react-dom/src/SyntheticEvent";
+import { FiberNode } from "./fiber";
+import { NoFlags, Update } from "./fiberFlags";
 import {
   appendInitialChild,
-  Container,
   createInstance,
   createTextInstance,
+  Instance,
 } from "hostConfig";
-import { FiberNode } from "./fiber";
 import {
-  Fragment,
   FunctionComponent,
   HostComponent,
   HostRoot,
   HostText,
 } from "./workTags";
-import { NoFlags, Update } from "./fiberFlags";
-import { updateFiberProps } from "react-dom/src/SyntheticEvent";
 
-function markUpdate(fiber: FiberNode) {
-  fiber.flags |= Update;
-}
-
-// 生成更新计划，计算和收集更新 flags
-export const completeWork = (wip: FiberNode) => {
-  //递归中的归
-  const newProps = wip.pendingProps;
-  const current = wip.alternate;
-
-  switch (wip.tag) {
-    // 表示原生 DOM 元素节点；
-    // 构建 DOM 节点，并调用 appendAllChildren 函数将 DOM 插入到 DOM 树中；
-    // 收集更新 flags，并根据更新 flags 执行不同的 DOM 操作，例如插入新节点、更新节点属性、删除节点等；
-
-    case HostComponent:
-      if (current !== null && wip.stateNode) {
-        //update
-        // TODO: 组件的更新阶段
-        updateFiberProps(wip.stateNode, newProps);
-      } else {
-        // 首屏渲染阶段
-        // 构建 DOM
-        const instance = createInstance(wip.type, newProps);
-        // 将 DOM 插入到 DOM 树中
-        appendAllChildren(instance, wip);
-        wip.stateNode = instance;
-      }
-      // 收集更新 flags
-      bubbleProperties(wip);
-      return null;
-
-    // 表示文本节点；
-    // 构建 DOM 节点，并将 DOM 插入到 DOM 树中；
-    // 收集更新 flags，根据 flags 的值，更新文本节点的内容；
-    case HostText:
-      if (current !== null && wip.stateNode) {
-        // TODO: 组件的更新阶段
-        // update
-        const oldText = current.memoizedProps?.content;
-        const newText = newProps.content;
-        if (oldText !== newText) {
-          markUpdate(wip);
-        }
-      } else {
-        // 首屏渲染阶段
-        // 构建 DOM
-        const instance = createTextInstance(newProps.content);
-        wip.stateNode = instance;
-      }
-      // 收集更新 flags
-      bubbleProperties(wip);
-      return null;
-
-    // 表示根节点；
-    // 会执行一些与根节点相关的最终操作，例如处理根节点的属性，确保整个应用更新完毕；
-    case HostRoot:
-    case FunctionComponent:
-    case Fragment:
-      bubbleProperties(wip);
-      return null;
-
-    default:
-      if (__DEV__) {
-        console.warn("未处理completeWork情况", wip);
-      }
-      break;
-  }
-};
-
-function appendAllChildren(parent: Container, wip: FiberNode) {
-  let node = wip.child;
+const appendAllChildren = (parent: Instance, workInProgress: FiberNode) => {
+  // 遍历workInProgress所有子孙 DOM元素，依次挂载
+  let node = workInProgress.child;
   while (node !== null) {
     if (node.tag === HostComponent || node.tag === HostText) {
-      // 处理原生 DOM 元素节点或文本节点
-      appendInitialChild(parent, node?.stateNode);
+      appendInitialChild(parent, node.stateNode);
     } else if (node.child !== null) {
-      // 递归处理其他类型的组件节点的子节点
       node.child.return = node;
       node = node.child;
       continue;
     }
 
-    if (node === wip) {
+    if (node === workInProgress) {
       return;
     }
 
     while (node.sibling === null) {
-      if (node.return === null || node.return === wip) {
+      if (node.return === null || node.return === workInProgress) {
         return;
       }
-      node = node?.return;
+      node = node.return;
     }
-    // 处理下一个兄弟节点
     node.sibling.return = node.return;
     node = node.sibling;
   }
-}
+};
 
-// 收集更新 flags，将子 FiberNode 的 flags 冒泡到父 FiberNode 上
-function bubbleProperties(wip: FiberNode) {
+const bubbleProperties = (completeWork: FiberNode) => {
   let subtreeFlags = NoFlags;
-  let child = wip.child;
+  let child = completeWork.child;
   while (child !== null) {
     subtreeFlags |= child.subtreeFlags;
     subtreeFlags |= child.flags;
-    child.return = wip;
+
+    child.return = completeWork;
     child = child.sibling;
   }
-  wip.subtreeFlags |= subtreeFlags;
+  completeWork.subtreeFlags |= subtreeFlags;
+};
+
+function markUpdate(fiber: FiberNode) {
+  fiber.flags |= Update;
 }
+
+export const completeWork = (workInProgress: FiberNode) => {
+  if (__DEV__) {
+    console.log("complete流程", workInProgress.type);
+  }
+  const newProps = workInProgress.pendingProps;
+  const current = workInProgress.alternate;
+
+  switch (workInProgress.tag) {
+    case HostComponent:
+      if (current !== null && workInProgress.stateNode) {
+        // 更新
+        // TODO 更新元素属性
+        // 不应该在此处调用updateFiberProps，应该跟着判断属性变化的逻辑，在这里打flag
+        // 再在commitWork中更新fiberProps，我准备把这个过程留到「属性变化」相关需求一起做
+        updateFiberProps(workInProgress.stateNode, newProps);
+      } else {
+        // 初始化DOM
+        const instance = createInstance(workInProgress.type, newProps);
+        // 挂载DOM
+        appendAllChildren(instance, workInProgress);
+        workInProgress.stateNode = instance;
+
+        // TODO 初始化元素属性
+      }
+      // 冒泡flag
+      bubbleProperties(workInProgress);
+      return null;
+    case HostRoot:
+      bubbleProperties(workInProgress);
+      return null;
+    case HostText:
+      if (current !== null && workInProgress.stateNode) {
+        // 更新
+        const oldText = current.memoizedProps?.content;
+        const newText = newProps.content;
+        if (oldText !== newText) {
+          markUpdate(workInProgress);
+        }
+      } else {
+        // 初始化DOM
+        const textInstance = createTextInstance(newProps.content);
+        workInProgress.stateNode = textInstance;
+      }
+
+      // 冒泡flag
+      bubbleProperties(workInProgress);
+      return null;
+    case FunctionComponent:
+      bubbleProperties(workInProgress);
+      return null;
+    default:
+      console.error("completeWork未定义的fiber.tag", workInProgress);
+      return null;
+  }
+};

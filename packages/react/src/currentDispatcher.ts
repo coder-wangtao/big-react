@@ -1,23 +1,20 @@
 import { Action } from "shared/ReactTypes";
 
-export interface Dispatcher {
-  useState: <T>(initialState: (() => T) | T) => [T, Dispatch<T>];
-}
+export type Dispatcher = {
+  useState: <T>(initialState: (() => T) | T) => [T, Disptach<T>];
+};
 
-// const [num,updateNum] = useState(0)
-// const [num, updateNum] = useState((num) => num + 1);
+export type Disptach<State> = (action: Action<State>) => void;
 
-export type Dispatch<State> = (action: Action<State>) => void;
-
-const currentDispatcher: { current: Dispatcher | null } = {
+const currentDispatcher: { current: null | Dispatcher } = {
   current: null,
 };
 
-export const resolveDispatcher = (): Dispatcher => {
+export const resolveDispatcher = () => {
   const dispatcher = currentDispatcher.current;
 
   if (dispatcher === null) {
-    throw new Error("hook只能在函数组件中执行");
+    console.error("resolve dispatcher时dispatcher不存在");
   }
   return dispatcher;
 };

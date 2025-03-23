@@ -6,6 +6,7 @@ import {
 } from "hostConfig";
 import { FiberNode } from "./fiber";
 import {
+  Fragment,
   FunctionComponent,
   HostComponent,
   HostRoot,
@@ -71,10 +72,8 @@ export const completeWork = (wip: FiberNode) => {
     // 表示根节点；
     // 会执行一些与根节点相关的最终操作，例如处理根节点的属性，确保整个应用更新完毕；
     case HostRoot:
-      bubbleProperties(wip);
-      return null;
-
     case FunctionComponent:
+    case Fragment:
       bubbleProperties(wip);
       return null;
 

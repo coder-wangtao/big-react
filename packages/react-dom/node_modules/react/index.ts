@@ -6,7 +6,6 @@ import currentDispatcher, {
 import { jsx, isValidElement as isValidElementFn } from "./src/jsx";
 
 export const useState = <State>(initialState: (() => State) | State) => {
-  debugger;
   const dispatcher = resolveDispatcher() as Dispatcher;
   return dispatcher.useState<State>(initialState);
 };

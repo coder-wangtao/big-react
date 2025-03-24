@@ -11,12 +11,20 @@ function App() {
     <li key={2}>2</li>,
     <li key={3}>3</li>,
     <li key={4}>4</li>,
+    <>
+      <li key={111}>111</li>
+      <li key={222}>222</li>
+    </>,
   ];
   const after = [
     <li key={4}>4</li>,
     <li key={2}>2</li>,
     <li key={3}>3</li>,
     <li key={1}>1</li>,
+    <>
+      <li key={111}>111</li>
+      <li key={222}>222</li>
+    </>,
   ];
 
   const listToUse = isOdd ? before : after;
@@ -33,7 +41,19 @@ function App() {
 }
 
 function Child() {
-  return <span>big-react</span>;
+  const [num, setNum] = useState(0);
+
+  return (
+    <ul
+      onClickCapture={() => {
+        setNum((num) => num + 1);
+        setNum((num) => num + 1);
+        setNum((num) => num + 1);
+      }}
+    >
+      {num}
+    </ul>
+  );
 }
 
 function App1() {
@@ -45,4 +65,4 @@ function App1() {
     </h1>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(<Child />);

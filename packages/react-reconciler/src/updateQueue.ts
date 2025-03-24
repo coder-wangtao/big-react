@@ -1,9 +1,12 @@
 import { Disptach } from "react/src/currentDispatcher";
 import { Action } from "shared/ReactTypes";
 import { FiberNode } from "./fiber";
+import { Lane } from "./fiberLanes";
 
 export interface Update<State> {
   action: Action<State>;
+  lane: Lane;
+  next: Update<State> | null;
 }
 
 export interface UpdateQueue<State> {
@@ -14,12 +17,14 @@ export interface UpdateQueue<State> {
 }
 
 // 创建
-export const createUpdate = <State>(action: Action<State>) => {
+export const createUpdate = <State>(action: Action<State>, lane: Lane) => {
   if (__DEV__) {
-    console.log("创建update：", action);
+    // console.log("创建update：", action);
   }
   return {
     action,
+    lane,
+    next: null,
   };
 };
 
@@ -29,7 +34,14 @@ export const enqueueUpdate = <Action>(
   update: Update<Action>,
 ) => {
   if (__DEV__) {
-    console.log("将update插入更新队列：", update);
+    // console.log("将update插入更新队列：", update);
+  }
+  const pending = updateQueue.shared.pending;
+  if (pending === null) {
+    update.next = update;
+  } else {
+    update.next = pending.next;
+    pending.next = update;
   }
   updateQueue.shared.pending = update;
 };
@@ -48,24 +60,43 @@ export const createUpdateQueue = <Action>() => {
 // 消费
 export const processUpdateQueue = <State>(
   baseState: State,
-  updateQueue: UpdateQueue<State>,
-  fiber: FiberNode,
-): State => {
-  if (updateQueue !== null) {
-    const pending = updateQueue.shared.pending;
-    const pendingUpdate = pending;
-    updateQueue.shared.pending = null;
+  pendingUpdate: Update<any> | null,
+  renderLane: Lane,
+  onSkipUpdate?: <State>(update: Update<State>) => void,
+): {
+  memoizedState: State;
+  baseState: State;
+  baseQueue: Update<State> | null;
+} => {
+  const result: ReturnType<typeof processUpdateQueue<State>> = {
+    memoizedState: baseState,
+    baseState,
+    baseQueue: null,
+  };
 
-    if (pendingUpdate !== null) {
-      const action = pendingUpdate.action;
-      if (action instanceof Function) {
-        baseState = action(baseState);
+  if (pendingUpdate !== null) {
+    // 第一个update
+    const first = pendingUpdate.next;
+    let pending = pendingUpdate.next as Update<any>;
+
+    do {
+      const updateLane = pending.lane;
+      if (updateLane === renderLane) {
+        const action = pending.action;
+        if (action instanceof Function) {
+          baseState = action(baseState);
+        } else {
+          baseState = action;
+        }
       } else {
-        baseState = action;
+        if (__DEV__) {
+          console.warn("不应该进入");
+        }
       }
-    }
-  } else {
-    console.error(fiber, "processUpdateQueue时 updateQueue不存在");
+      pending = pending.next as Update<any>;
+    } while (pending !== first);
   }
-  return baseState;
+  result.memoizedState = baseState;
+
+  return result;
 };

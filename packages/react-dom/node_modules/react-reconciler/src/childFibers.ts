@@ -1,12 +1,13 @@
-import { REACT_ELEMENT_TYPE } from "shared/ReactSymbol";
-import { Props, ReactElementType } from "shared/ReactTypes";
+import { REACT_ELEMENT_TYPE, REACT_FRAGMENT_TYPE } from "shared/ReactSymbol";
+import { Key, Props, ReactElementType } from "shared/ReactTypes";
 import {
   createFiberFromElement,
+  createFiberFromFragment,
   createWorkInProgress,
   FiberNode,
 } from "./fiber";
 import { ChildDeletion, Placement } from "./fiberFlags";
-import { HostText } from "./workTags";
+import { Fragment, HostText } from "./workTags";
 
 /**
  * mount/reconcile只负责 Placement(插入)/Placement(移动)/ChildDeletion(删除)
@@ -58,8 +59,12 @@ function ChildReconciler(shouldTrackEffects: boolean) {
 
         if (element.$$typeof === REACT_ELEMENT_TYPE) {
           if (current.type === element.type) {
+            let props = element.props;
+            if (element.type === REACT_FRAGMENT_TYPE) {
+              props = element.props.children as Props;
+            }
             // type相同 可以复用
-            const existing = useFiber(current, element.props);
+            const existing = useFiber(current, props);
             existing.return = returnFiber;
             // 当前节点可复用，其他兄弟节点都删除
             deleteRemainingChildren(returnFiber, current.sibling);
@@ -79,7 +84,12 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       }
     }
     // 创建新的
-    const fiber = createFiberFromElement(element);
+    let fiber;
+    if (element.type === REACT_FRAGMENT_TYPE) {
+      fiber = createFiberFromFragment(element.props.children as any, key);
+    } else {
+      fiber = createFiberFromElement(element);
+    }
     fiber.return = returnFiber;
     return fiber;
   }
@@ -119,9 +129,19 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       // 新建文本节点
       return new FiberNode(HostText, { content: element }, null);
     }
+
     if (typeof element === "object" && element !== null) {
       switch (element.$$typeof) {
         case REACT_ELEMENT_TYPE:
+          if (element.type === REACT_FRAGMENT_TYPE) {
+            return updateFragment(
+              returnFiber,
+              before,
+              element as any,
+              keyToUse,
+              existingChildren,
+            );
+          }
           if (before) {
             // fiber key相同，如果type也相同，则可复用
             existingChildren.delete(keyToUse);
@@ -134,6 +154,16 @@ function ChildReconciler(shouldTrackEffects: boolean) {
           }
           return createFiberFromElement(element);
       }
+    }
+
+    if (Array.isArray(element)) {
+      return updateFragment(
+        returnFiber,
+        before,
+        element,
+        keyToUse,
+        existingChildren,
+      );
     }
     console.error("updateFromMap未处理的情况", before, element);
     return null;
@@ -238,8 +268,18 @@ function ChildReconciler(shouldTrackEffects: boolean) {
   function reconcileChildFibers(
     returnFiber: FiberNode,
     currentFirstChild: FiberNode | null,
-    newChild?: ReactElementType,
+    newChild?: any,
   ): FiberNode | null {
+    // 判断Fragment
+    const isUnkeyedTopLevelFragment =
+      typeof newChild === "object" &&
+      newChild !== null &&
+      newChild.type === REACT_FRAGMENT_TYPE &&
+      newChild.key === null;
+    if (isUnkeyedTopLevelFragment) {
+      newChild = newChild.props.children;
+    }
+
     // newChild 为 JSX
     // currentFirstChild 为 fiberNode
     if (typeof newChild === "object" && newChild !== null) {
@@ -273,6 +313,24 @@ function useFiber(fiber: FiberNode, pendingProps: Props): FiberNode {
   clone.sibling = null;
 
   return clone;
+}
+
+function updateFragment(
+  returnFiber: FiberNode,
+  current: FiberNode | undefined,
+  elements: any[],
+  key: any,
+  existingChildren: ExistingChildren,
+) {
+  let fiber;
+  if (!current || current.tag !== Fragment) {
+    fiber = createFiberFromFragment(elements, key);
+  } else {
+    existingChildren.delete(key);
+    fiber = useFiber(current, elements);
+  }
+  fiber.return = returnFiber;
+  return fiber;
 }
 
 export const reconcileChildFibers = ChildReconciler(true);

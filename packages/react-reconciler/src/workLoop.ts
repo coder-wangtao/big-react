@@ -89,7 +89,6 @@ function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
 
   // 初始化操作
   prepareFreshStack(root, lane);
-
   // render阶段具体操作
   do {
     try {
@@ -168,6 +167,7 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
+  // debugger;
   const next = beginWork(fiber, wipRootRenderLane);
   // 执行完beginWork后，pendingProps 变为 memoizedProps
   fiber.memoizedProps = fiber.pendingProps;

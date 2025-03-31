@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { createRoot } from "react-dom/client";
-
-function App() {
+import ReactDOM from "react-dom";
+import React, { useState } from "react";
+function App2() {
   const [num, updateNum] = useState(0);
 
   const isOdd = num % 2;
@@ -40,29 +39,41 @@ function App() {
   );
 }
 
-function Child() {
-  const [num, setNum] = useState(0);
+function App() {
+  const [arr, setArr] = useState(["one", "two", "three"]);
+
+  function handleClick() {
+    // debugger;
+    setArr(["three", "two", "one"]);
+  }
 
   return (
-    <ul
-      onClickCapture={() => {
-        setNum((num) => num + 1);
-        setNum((num) => num + 1);
-        setNum((num) => num + 1);
-      }}
-    >
-      {num}
-    </ul>
+    <div>
+      <h2 onClick={handleClick}>点我改变数组</h2>
+      <ul>
+        {arr.map((item) => {
+          return <li key={item}>{item}</li>;
+        })}
+      </ul>
+    </div>
   );
 }
 
-function App1() {
+function App3() {
+  // const [num, setNum] = useState(0);
+
   return (
-    <h1>
-      <h2>
-        <h3>222</h3>
-      </h2>
-    </h1>
+    <div>
+      <span>span</span>
+      <p>p</p>
+      {/* react 不设置key，react源码中会已index做为key */}
+      <ul>
+        <li>1</li>
+        <li>2</li>
+        <li>3</li>
+      </ul>
+    </div>
   );
 }
-createRoot(document.getElementById("root")).render(<Child />);
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

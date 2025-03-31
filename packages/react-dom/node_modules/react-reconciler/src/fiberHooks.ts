@@ -14,9 +14,10 @@ import { Lane, NoLane, requestUpdateLane } from "./fiberLanes";
 import { NoFlags } from "./fiberFlags";
 
 let workInProgressHook: Hook | null = null;
-let currentHook: Hook | null = null;
-let currentlyRenderingFiber: FiberNode | null = null;
+let currentHook: Hook | null = null; //当前在执行哪个hook
+let currentlyRenderingFiber: FiberNode | null = null; //当前在处理哪个函数组件
 let renderLane: Lane = NoFlags;
+
 interface Hook {
   memoizedState: any;
   // 对于state，保存update相关数据
@@ -39,7 +40,6 @@ export const renderWithHooks = (workInProgress: FiberNode, lane: Lane) => {
   } else {
     currentDispatcher.current = HooksDispatcherOnMount;
   }
-
   const Component = workInProgress.type;
   const props = workInProgress.pendingProps;
   const children = Component(props);
@@ -71,9 +71,9 @@ function mountState<State>(
     memoizedState = initialState;
   }
   hook.memoizedState = memoizedState;
+
   const queue = createUpdateQueue<State>();
   hook.updateQueue = queue;
-
   // @ts-ignore
   const dispatch = (queue.dispatch = dispatchSetState.bind(
     null,
@@ -109,7 +109,9 @@ function dispatchSetState<State>(
 ) {
   const lane = requestUpdateLane();
   const update = createUpdate(action, lane);
+
   enqueueUpdate(updateQueue, update);
+
   scheduleUpdateOnFiber(fiber, lane);
 }
 
@@ -119,8 +121,11 @@ function mountWorkInProgressHook(): Hook {
     updateQueue: null,
     next: null,
   };
+  //当前在处理的Hook
   if (workInProgressHook === null) {
+    //mount
     if (currentlyRenderingFiber === null) {
+      //在函数式组件中调用hook,怎么保证一定在函数内调用hook
       console.error("mountWorkInprogressHook时currentlyRenderingFiber未定义");
     } else {
       currentlyRenderingFiber.memoizedState = workInProgressHook = hook;

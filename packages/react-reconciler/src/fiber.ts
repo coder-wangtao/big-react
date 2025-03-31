@@ -47,10 +47,10 @@ export class FiberNode {
     this.ref = null;
 
     // 状态
-    this.pendingProps = pendingProps;
-    this.memoizedProps = null;
+    this.memoizedState = null; //memoizedState对于 函数组件（App）根节点，就是hook链表
+    this.pendingProps = pendingProps; //pendingProps对于文本节点里面是{content:"1111"}  对于div等节点就是jsx props {children:,...} / diff过程中老的jsx
+    this.memoizedProps = null; //pendingProps对于文本节点里面是{content:"1111"}  对于div等节点就是jsx props {children:,...}  beginWork执行后赋值 / diff过程中新的jsx
     this.updateQueue = null;
-    this.memoizedState = null;
 
     // 副作用
     this.flags = NoFlags;
@@ -83,6 +83,8 @@ export class FiberRootNode {
 
 export function createFiberFromElement(element: ReactElementType): FiberNode {
   const { type, key, props } = element;
+  // debugger;
+
   let fiberTag: WorkTag = FunctionComponent;
 
   if (typeof type === "string") {
@@ -106,7 +108,7 @@ export const createWorkInProgress = (
   pendingProps: Props,
 ): FiberNode => {
   let wip = current.alternate;
-
+  // debugger;
   if (wip === null) {
     // mount
     wip = new FiberNode(current.tag, pendingProps, current.key);

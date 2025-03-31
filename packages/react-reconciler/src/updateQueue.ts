@@ -38,7 +38,7 @@ export const enqueueUpdate = <Action>(
   }
   const pending = updateQueue.shared.pending;
   if (pending === null) {
-    update.next = update;
+    update.next = update; //先不管
   } else {
     update.next = pending.next;
     pending.next = update;

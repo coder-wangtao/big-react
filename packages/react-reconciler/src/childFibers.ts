@@ -115,6 +115,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     }
     const before = existingChildren.get(keyToUse);
 
+    //文本节点
     if (typeof element === "string") {
       if (before) {
         // fiber key相同，如果type也相同，则可复用
@@ -130,6 +131,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       return new FiberNode(HostText, { content: element }, null);
     }
 
+    //div
     if (typeof element === "object" && element !== null) {
       switch (element.$$typeof) {
         case REACT_ELEMENT_TYPE:
@@ -277,19 +279,20 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       newChild.type === REACT_FRAGMENT_TYPE &&
       newChild.key === null;
     if (isUnkeyedTopLevelFragment) {
-      newChild = newChild.props.children;
+      newChild = newChild.props.children; //直接赋值children
     }
 
     // newChild 为 JSX
     // currentFirstChild 为 fiberNode
     if (typeof newChild === "object" && newChild !== null) {
       switch (newChild.$$typeof) {
+        //children为单节点
         case REACT_ELEMENT_TYPE:
           return placeSingleChild(
             reconcileSingleElement(returnFiber, currentFirstChild, newChild),
           );
       }
-
+      //children为多个
       if (Array.isArray(newChild)) {
         return reconcileChildrenArray(returnFiber, currentFirstChild, newChild);
       }

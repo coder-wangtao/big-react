@@ -36,21 +36,25 @@ function hasValidRef(config: any) {
   return config.ref !== undefined;
 }
 
-export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
+export const createElement = (
+  type: ElementType,
+  config: any,
+  ...maybeChildren: any
+) => {
   let key: Key = null;
-  const props: any = {};
+  const props: Props = {};
   let ref: Ref = null;
 
   for (const prop in config) {
     const val = config[prop];
     if (prop === "key") {
-      if (hasValidKey(config)) {
+      if (val !== undefined) {
         key = "" + val;
       }
       continue;
     }
-    if (prop === "ref" && val !== undefined) {
-      if (hasValidRef(config)) {
+    if (prop === "ref") {
+      if (val !== undefined) {
         ref = val;
       }
       continue;
@@ -59,10 +63,8 @@ export const jsx = (type: ElementType, config: any, ...maybeChildren: any) => {
       props[prop] = val;
     }
   }
-
   const maybeChildrenLength = maybeChildren.length;
   if (maybeChildrenLength) {
-    // 将多余参数作为children
     if (maybeChildrenLength === 1) {
       props.children = maybeChildren[0];
     } else {
@@ -81,10 +83,13 @@ export function isValidElement(object: any) {
 }
 
 // jsxDEV传入的后续几个参数与jsx不同
-export const jsxDEV = (type: ElementType, config: any) => {
+export const jsx = (type: ElementType, config: any, maybeKey: any) => {
   let key: Key = null;
   const props: any = {};
   let ref: Ref = null;
+  if (maybeKey !== undefined) {
+    key = "" + maybeKey;
+  }
 
   for (const prop in config) {
     const val = config[prop];
@@ -104,6 +109,7 @@ export const jsxDEV = (type: ElementType, config: any) => {
       props[prop] = val;
     }
   }
-
   return ReactElement(type, key, ref, props);
 };
+
+export const jsxDEV = jsx;

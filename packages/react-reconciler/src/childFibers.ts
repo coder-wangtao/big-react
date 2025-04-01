@@ -113,12 +113,15 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     } else {
       keyToUse = element.key !== null ? element.key : index;
     }
+
+    //老节点的fiber
     const before = existingChildren.get(keyToUse);
 
     //文本节点
     if (typeof element === "string") {
       if (before) {
         // fiber key相同，如果type也相同，则可复用
+
         existingChildren.delete(keyToUse);
         if (before.tag === HostText) {
           // 复用文本节点
@@ -144,9 +147,15 @@ function ChildReconciler(shouldTrackEffects: boolean) {
               existingChildren,
             );
           }
+          // before 老节点的fiber
           if (before) {
             // fiber key相同，如果type也相同，则可复用
+            //从map中删除代表可以复用
+            //剩下的最后都会被移除
+            //1 2 3 老
+            //2 3 1 新
             existingChildren.delete(keyToUse);
+
             if (before.type === element.type) {
               // 复用
               return useFiber(before, element.props);

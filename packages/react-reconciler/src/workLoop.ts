@@ -114,7 +114,7 @@ function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
 
 function commitRoot(root: FiberRootNode) {
   const finishedWork = root.finishedWork;
-
+  // debugger;
   if (finishedWork === null) {
     return;
   }
@@ -167,7 +167,6 @@ function workLoop() {
 }
 
 function performUnitOfWork(fiber: FiberNode) {
-  // debugger;
   const next = beginWork(fiber, wipRootRenderLane);
   // 执行完beginWork后，pendingProps 变为 memoizedProps
   fiber.memoizedProps = fiber.pendingProps;

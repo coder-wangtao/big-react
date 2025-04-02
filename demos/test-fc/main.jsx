@@ -43,7 +43,6 @@ function App() {
   const [arr, setArr] = useState(["one", "two", "three"]);
 
   function handleClick() {
-    // debugger;
     setArr(["three", "two", "one"]);
   }
 

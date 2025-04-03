@@ -21,6 +21,9 @@ export const appendChildToContainer = (
   child: Instance,
   container: Container,
 ) => {
+  // appendChild 会把指定的节点移动到父元素的最后，即使该节点已经存在于 DOM 中，
+  // appendChild 也会把它从原位置移除，并重新添加到最后的位置。
+  // debugger;
   container.appendChild(child);
 };
 

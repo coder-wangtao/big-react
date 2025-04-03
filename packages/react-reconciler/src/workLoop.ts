@@ -44,6 +44,7 @@ export function markUpdateLaneFromFiberToRoot(fiber: FiberNode, lane: Lane) {
   return null;
 }
 
+//会被执行三次
 export function ensureRootIsScheduled(root: FiberRootNode) {
   const updateLane = getHighestPriorityLane(root.pendingLanes);
 
@@ -59,7 +60,9 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
     }
     // 同步优先级 用微任务调度
     // [performSyncWorkOnRoot, performSyncWorkOnRoot, performSyncWorkOnRoot]
+    //实际上就是在数组中添回调函数
     scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane));
+    //
     scheduleMicroTask(flushSyncCallbacks);
   } else {
     // 其他优先级 用宏任务调度
@@ -76,6 +79,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
 
 function performSyncWorkOnRoot(root: FiberRootNode, lane: Lane) {
   const nextLane = getHighestPriorityLane(root.pendingLanes);
+
   if (nextLane !== SyncLane) {
     // 其他比SyncLane低的优先级
     // NoLane
@@ -161,6 +165,7 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 }
 
 function workLoop() {
+  // debugger;
   while (workInProgress !== null) {
     performUnitOfWork(workInProgress);
   }

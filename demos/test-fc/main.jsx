@@ -39,7 +39,7 @@ function App2() {
   );
 }
 
-function App() {
+function App1() {
   const [arr, setArr] = useState(["one", "two", "three"]);
 
   function handleClick() {
@@ -71,6 +71,30 @@ function App3() {
         <li>2</li>
         <li>3</li>
       </ul>
+    </div>
+  );
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  function handle_click() {
+    // debugger;
+    setCount((count) => {
+      return count + 1;
+    });
+    setCount((count) => {
+      return count + 1;
+    });
+    setCount((count) => {
+      return count + 1;
+    });
+  }
+
+  return (
+    <div>
+      <h1 onClick={handle_click}>点我新增</h1>
+      <h2>{count}</h2>
     </div>
   );
 }

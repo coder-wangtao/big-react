@@ -90,7 +90,7 @@ function updateState<State>(): [State, Disptach<State>] {
   const baseState = hook.memoizedState;
   const pending = queue.shared.pending;
   // 缺少render阶段更新的处理逻辑
-
+  queue.shared.pending = null;
   if (pending !== null) {
     const { memoizedState } = processUpdateQueue(
       hook.memoizedState,

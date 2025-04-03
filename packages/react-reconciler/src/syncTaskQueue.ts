@@ -10,6 +10,10 @@ export function scheduleSyncCallback(callback: (...args: any) => void) {
   }
 }
 
+//开启 一个微任务
+// queueMicrotask(() => {
+//   console.log('微任务 2');
+// });
 export const scheduleMicroTask =
   typeof queueMicrotask === "function"
     ? queueMicrotask
@@ -21,6 +25,7 @@ export function flushSyncCallbacks() {
   if (!isFlushingSyncQueue && syncQueue) {
     isFlushingSyncQueue = true;
     try {
+      //实际上就是执行render函数
       syncQueue.forEach((callback) => callback());
     } catch (e) {
       if (__DEV__) {

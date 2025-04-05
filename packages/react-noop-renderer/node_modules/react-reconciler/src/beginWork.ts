@@ -2,6 +2,7 @@ import { ReactElementType } from "shared/ReactTypes";
 import { mountChildFibers, reconcileChildFibers } from "./childFibers";
 import { FiberNode } from "./fiber";
 import { renderWithHooks } from "./fiberHooks";
+import { Lane } from "./fiberLanes";
 import { processUpdateQueue, UpdateQueue } from "./updateQueue";
 import {
   Fragment,
@@ -10,28 +11,28 @@ import {
   HostRoot,
   HostText,
 } from "./workTags";
-import { Lane } from "./fiberLanes";
-import { Update } from "./fiberFlags";
 
-export const beginWork = (workInProgress: FiberNode, renderLane: Lane) => {
-  if (__DEV__) {
-    // console.log("beginWork流程", workInProgress.type);
-  }
-  switch (workInProgress.tag) {
+// 递归中的递阶段
+export const beginWork = (wip: FiberNode, renderLane: Lane) => {
+  // 比较，返回子fiberNode
+  switch (wip.tag) {
     case HostRoot:
-      return updateHostRoot(workInProgress, renderLane);
+      return updateHostRoot(wip, renderLane);
     case HostComponent:
-      return updateHostComponent(workInProgress);
+      return updateHostComponent(wip);
     case HostText:
       return null;
     case FunctionComponent:
-      return updateFunctionComponent(workInProgress, renderLane);
+      return updateFunctionComponent(wip, renderLane);
     case Fragment:
-      return updateFragment(workInProgress);
+      return updateFragment(wip);
     default:
-      console.error("beginWork未处理的情况");
-      return null;
+      if (__DEV__) {
+        console.warn("beginWork未实现的类型");
+      }
+      break;
   }
+  return null;
 };
 
 function updateFragment(wip: FiberNode) {
@@ -40,48 +41,40 @@ function updateFragment(wip: FiberNode) {
   return wip.child;
 }
 
-function updateFunctionComponent(workInProgress: FiberNode, renderLane: Lane) {
-  const nextChildren = renderWithHooks(workInProgress, renderLane);
-  reconcileChildren(workInProgress, nextChildren);
-  return workInProgress.child;
+function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
+  const nextChildren = renderWithHooks(wip, renderLane);
+  reconcileChildren(wip, nextChildren);
+  return wip.child;
 }
 
-function updateHostComponent(workInProgress: FiberNode) {
-  // 根据element创建fiberNode
-  const nextProps = workInProgress.pendingProps;
-  const nextChildren = nextProps.children;
-  reconcileChildren(workInProgress, nextChildren);
-  return workInProgress.child;
-}
-
-function updateHostRoot(workInProgress: FiberNode, renderLane: Lane) {
-  const baseState = workInProgress.memoizedState;
-  const updateQueue = workInProgress.updateQueue as UpdateQueue<Element>;
+function updateHostRoot(wip: FiberNode, renderLane: Lane) {
+  const baseState = wip.memoizedState;
+  const updateQueue = wip.updateQueue as UpdateQueue<Element>;
   const pending = updateQueue.shared.pending;
   updateQueue.shared.pending = null;
   const { memoizedState } = processUpdateQueue(baseState, pending, renderLane);
-  workInProgress.memoizedState = memoizedState;
+  wip.memoizedState = memoizedState;
 
-  const nextChildren = workInProgress.memoizedState;
-  reconcileChildren(workInProgress, nextChildren);
-  return workInProgress.child;
+  const nextChildren = wip.memoizedState;
+  reconcileChildren(wip, nextChildren);
+  return wip.child;
 }
 
-function reconcileChildren(
-  workInProgress: FiberNode,
-  children?: ReactElementType,
-) {
-  const current = workInProgress.alternate;
+function updateHostComponent(wip: FiberNode) {
+  const nextProps = wip.pendingProps;
+  const nextChildren = nextProps.children;
+  reconcileChildren(wip, nextChildren);
+  return wip.child;
+}
+
+function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
+  const current = wip.alternate;
 
   if (current !== null) {
     // update
-    workInProgress.child = reconcileChildFibers(
-      workInProgress,
-      current.child,
-      children,
-    );
+    wip.child = reconcileChildFibers(wip, current?.child, children);
   } else {
     // mount
-    workInProgress.child = mountChildFibers(workInProgress, null, children);
+    wip.child = mountChildFibers(wip, null, children);
   }
 }

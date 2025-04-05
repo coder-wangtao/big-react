@@ -1,12 +1,11 @@
 import { Dispatch } from "react/src/currentDispatcher";
 import { Action } from "shared/ReactTypes";
-import { FiberNode } from "./fiber";
 import { isSubsetOfLanes, Lane, NoLane } from "./fiberLanes";
 
 export interface Update<State> {
   action: Action<State>;
   lane: Lane;
-  next: Update<State> | null;
+  next: Update<any> | null;
 }
 
 export interface UpdateQueue<State> {
@@ -16,11 +15,10 @@ export interface UpdateQueue<State> {
   dispatch: Dispatch<State> | null;
 }
 
-// 创建
-export const createUpdate = <State>(action: Action<State>, lane: Lane) => {
-  if (__DEV__) {
-    // console.log("创建update：", action);
-  }
+export const createUpdate = <State>(
+  action: Action<State>,
+  lane: Lane,
+): Update<State> => {
   return {
     action,
     lane,
@@ -28,41 +26,36 @@ export const createUpdate = <State>(action: Action<State>, lane: Lane) => {
   };
 };
 
-// 插入
-export const enqueueUpdate = <Action>(
-  updateQueue: UpdateQueue<Action>,
-  update: Update<Action>,
+export const createUpdateQueue = <State>() => {
+  return {
+    shared: {
+      pending: null,
+    },
+    dispatch: null,
+  } as UpdateQueue<State>;
+};
+
+export const enqueueUpdate = <State>(
+  updateQueue: UpdateQueue<State>,
+  update: Update<State>,
 ) => {
-  if (__DEV__) {
-    // console.log("将update插入更新队列：", update);
-  }
   const pending = updateQueue.shared.pending;
   if (pending === null) {
-    update.next = update; //先不管
+    // pending = a -> a
+    update.next = update;
   } else {
+    // pending = b -> a -> b
+    // pending = c -> a -> b -> c
     update.next = pending.next;
     pending.next = update;
   }
   updateQueue.shared.pending = update;
 };
 
-// 初始化
-export const createUpdateQueue = <Action>() => {
-  const updateQueue: UpdateQueue<Action> = {
-    shared: {
-      pending: null,
-    },
-    dispatch: null,
-  };
-  return updateQueue;
-};
-
-// 消费
 export const processUpdateQueue = <State>(
   baseState: State,
-  pendingUpdate: Update<any> | null,
+  pendingUpdate: Update<State> | null,
   renderLane: Lane,
-  onSkipUpdate?: <State>(update: Update<State>) => void,
 ): {
   memoizedState: State;
   baseState: State;
@@ -82,16 +75,13 @@ export const processUpdateQueue = <State>(
     let newBaseState = baseState;
     let newBaseQueueFirst: Update<State> | null = null;
     let newBaseQueueLast: Update<State> | null = null;
-    const newState = baseState;
+    let newState = baseState;
 
     do {
       const updateLane = pending.lane;
       if (!isSubsetOfLanes(renderLane, updateLane)) {
-        //优先级不够 被跳过
+        // 优先级不够 被跳过
         const clone = createUpdate(pending.action, pending.lane);
-
-        // onSkipUpdate?.(clone);
-
         // 是不是第一个被跳过的
         if (newBaseQueueFirst === null) {
           // first u0 last = u0
@@ -105,32 +95,34 @@ export const processUpdateQueue = <State>(
           newBaseQueueLast = clone;
         }
       } else {
-        //优先级足够
+        // 优先级足够
         if (newBaseQueueLast !== null) {
           const clone = createUpdate(pending.action, NoLane);
           newBaseQueueLast.next = clone;
           newBaseQueueLast = clone;
         }
+
         const action = pending.action;
         if (action instanceof Function) {
-          baseState = action(baseState);
+          // baseState 1 update (x) => 4x -> memoizedState 4
+          newState = action(baseState);
         } else {
-          baseState = action;
+          // baseState 1 update 2 -> memoizedState 2
+          newState = action;
         }
       }
       pending = pending.next as Update<any>;
     } while (pending !== first);
 
     if (newBaseQueueLast === null) {
-			// 本次计算没有update被跳过
-			newBaseState = newState;
-		} else {
-			newBaseQueueLast.next = newBaseQueueFirst;
-		}
-		result.memoizedState = newState;
-		result.baseState = newBaseState;
-		result.baseQueue = newBaseQueueLast;
+      // 本次计算没有update被跳过
+      newBaseState = newState;
+    } else {
+      newBaseQueueLast.next = newBaseQueueFirst;
+    }
+    result.memoizedState = newState;
+    result.baseState = newBaseState;
+    result.baseQueue = newBaseQueueLast;
   }
-
   return result;
 };

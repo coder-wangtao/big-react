@@ -137,9 +137,9 @@ function App() {
   const [num, update] = useState(100);
   return (
     <ul onClick={() => update(50)}>
-      {/* {new Array(num).fill(0).map((_, i) => {
+      {new Array(num).fill(0).map((_, i) => {
         return <Child key={i}>{i}</Child>;
-      })} */}
+      })}
     </ul>
   );
 }
@@ -150,4 +150,4 @@ function Child({ children }) {
   return <li>{children}</li>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App3 />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

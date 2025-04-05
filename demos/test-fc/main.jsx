@@ -1,5 +1,6 @@
 import ReactDOM from "react-dom";
 import React, { useState } from "react";
+import { useEffect } from "react";
 function App2() {
   const [num, updateNum] = useState(0);
 
@@ -41,7 +42,7 @@ function App2() {
 
 function App1() {
   const [arr, setArr] = useState(["one", "two", "three"]);
-
+  
   function handleClick() {
     setArr(["three", "two", "one"]);
   }
@@ -75,7 +76,7 @@ function App3() {
   );
 }
 
-function App() {
+function App4() {
   const [count, setCount] = useState(0);
 
   function handle_click() {
@@ -97,6 +98,39 @@ function App() {
       <h2>{count}</h2>
     </div>
   );
+}
+
+function App() {
+  const [num, setNum] = useState(0);
+
+  useEffect(() => {
+    console.log("App mount");
+  }, []);
+
+  useEffect(() => {
+    console.log("num change create", num);
+    return () => {
+      console.log("num change destroy", num);
+    };
+  }, [num]);
+
+  return (
+    <div
+      onClick={() => {
+        setNum(num + 1);
+      }}
+    >
+      {num === 0 ? <Child /> : "noop"}
+    </div>
+  );
+}
+
+function Child() {
+  useEffect(() => {
+    console.log("Child mount");
+    return () => console.log("Child unmount");
+  }, []);
+  return "i am child";
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);

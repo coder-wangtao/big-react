@@ -1,4 +1,3 @@
-import { updateFiberProps } from "react-dom/src/SyntheticEvent";
 import { FiberNode } from "./fiber";
 import { NoFlags, Update } from "./fiberFlags";
 import {
@@ -73,7 +72,7 @@ export const completeWork = (workInProgress: FiberNode) => {
         // TODO 更新元素属性
         // 不应该在此处调用updateFiberProps，应该跟着判断属性变化的逻辑，在这里打flag
         // 再在commitWork中更新fiberProps，我准备把这个过程留到「属性变化」相关需求一起做
-        updateFiberProps(workInProgress.stateNode, newProps);
+        markUpdate(workInProgress);
       } else {
         // 初始化DOM
         const instance = createInstance(workInProgress.type, newProps);

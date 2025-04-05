@@ -9,6 +9,7 @@ import {
 } from "./workTags";
 import { Lane, Lanes, NoLane, NoLanes } from "./fiberLanes";
 import { Effect } from "./fiberHooks";
+import { CallbackNode } from "scheduler";
 
 export class FiberNode {
   pendingProps: Props;
@@ -76,8 +77,11 @@ export class FiberRootNode {
   current: FiberNode;
   finishedWork: FiberNode | null;
   pendingLanes: Lanes;
-  finishLane: Lane;
+  finishedLane: Lane;
   pendingPassiveEffects: PendingPassiveEffects;
+
+  callbackNode: CallbackNode | null;
+  callbackPriority: Lane;
 
   constructor(container: Container, hostRootFiber: FiberNode) {
     this.container = container;
@@ -85,7 +89,10 @@ export class FiberRootNode {
     hostRootFiber.stateNode = this;
     this.finishedWork = null;
     this.pendingLanes = NoLanes;
-    this.finishLane = NoLane;
+    this.finishedLane = NoLane;
+    this.callbackNode = null;
+    this.callbackPriority = NoLane;
+
     this.pendingPassiveEffects = {
       unmount: [],
       update: [],

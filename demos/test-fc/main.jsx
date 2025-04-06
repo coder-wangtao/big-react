@@ -150,4 +150,4 @@ function Child({ children }) {
   return <li>{children}</li>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App1 />);

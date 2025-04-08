@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { peek, push, pop, Heap, Node } from "../src/SchedulerMinHeap";
 
-let idCounter = 0;
+const idCounter = 0;
 function createNode(val: number): Node {
   return { id: idCounter, sortIndex: val };
 }

@@ -100,40 +100,7 @@ function App4() {
   );
 }
 
-function App6() {
-  const [num, setNum] = useState(0);
-
-  useEffect(() => {
-    console.log("App mount");
-  }, []);
-
-  useEffect(() => {
-    console.log("num change create", num);
-    return () => {
-      console.log("num change destroy", num);
-    };
-  }, [num]);
-
-  return (
-    <div
-      onClick={() => {
-        setNum(num + 1);
-      }}
-    >
-      {num === 0 ? <Child1 /> : "noop"}
-    </div>
-  );
-}
-
-function Child1() {
-  useEffect(() => {
-    console.log("Child mount");
-    return () => console.log("Child unmount");
-  }, []);
-  return "i am child";
-}
-
-function App() {
+function App7() {
   const [num, update] = useState(100);
   return (
     <ul onClick={() => update(50)}>
@@ -150,4 +117,64 @@ function Child({ children }) {
   return <li>{children}</li>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App1 />);
+function Child1() {
+  useEffect(() => {
+    console.log("Child mount");
+    return () => console.log("Child unmount");
+  }, []);
+  return "i am child";
+}
+
+function effect1() {
+  console.log("uesEffect回调111执行");
+  return () => {
+    console.log("effect 111 销毁");
+  };
+}
+function effect2() {
+  console.log("uesEffect回调222执行");
+  return () => {
+    console.log("effect 222 销毁");
+  };
+}
+
+function effect3() {
+  console.log("uesEffect回调333执行");
+  return () => {
+    console.log("effect 333 销毁");
+  };
+}
+
+function effect4() {
+  console.log("uesEffect回调444执行");
+  return () => {
+    console.log("effect 444 销毁");
+  };
+}
+
+function Bpp() {
+  useEffect(effect3);
+  useEffect(effect4);
+  return <h1>Bpp</h1>;
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  useEffect(effect1);
+  useEffect(effect2);
+
+  function handle_click() {
+    setCount((count) => {
+      return count + 1;
+    });
+  }
+  return (
+    <div>
+      <h1 onClick={handle_click}>点我新增111</h1>
+      <Bpp />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

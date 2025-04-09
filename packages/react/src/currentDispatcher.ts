@@ -1,22 +1,23 @@
 import { Action } from "shared/ReactTypes";
 
-export type Dispatcher = {
+export interface Dispatcher {
   useState: <T>(initialState: (() => T) | T) => [T, Dispatch<T>];
-  useEffect: (callback: () => void | void, deps: any | undefined) => void;
+  useEffect: (callback: () => void | void, deps: any[] | void) => void;
   useTransition: () => [boolean, (callback: () => void) => void];
-};
+  useRef: <T>(initialValue: T) => { current: T };
+}
 
 export type Dispatch<State> = (action: Action<State>) => void;
 
-const currentDispatcher: { current: null | Dispatcher } = {
+const currentDispatcher: { current: Dispatcher | null } = {
   current: null,
 };
 
-export const resolveDispatcher = () => {
+export const resolveDispatcher = (): Dispatcher => {
   const dispatcher = currentDispatcher.current;
 
   if (dispatcher === null) {
-    console.error("resolve dispatcher时dispatcher不存在");
+    throw new Error("hook只能在函数组件中执行");
   }
   return dispatcher;
 };

@@ -1,3 +1,7 @@
+//React 将更新任务拆成多个小任务，每个小任务的数据结构是一个带着 expirationTime 的对象，
+//expirationTime 表示这个任务的过期时间，expirationTime 越小就表示过期时间越近，
+//该任务的优先级就越高，取出最小值就相当于取出优先级最高的任务。
+
 // ! 实现一个单线程任务调度器
 import { peek, pop, push } from "./SchedulerMinHeap";
 import {
@@ -30,7 +34,7 @@ export type Task = {
   callback: Callback | null;
   priorityLevel: PriorityLevel;
   startTime: number;
-  expirationTime: number;
+  expirationTime: number; //代表优先级越高，越小就表示过期时间越近，该任务的优先级就越高。
   sortIndex: number;
 };
 

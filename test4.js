@@ -1,16 +1,10 @@
-export type Heap<T extends Node> = Array<T>;
-export type Node = {
-  id: number; // 任务的唯一标识
-  sortIndex: number; // 排序的依据
-};
-
 // !获取堆顶元素
-export function peek<T extends Node>(heap: Heap<T>): T | null {
+export function peek(heap) {
   return heap.length === 0 ? null : heap[0];
 }
 
 // !给堆添加元素
-export function push<T extends Node>(heap: Heap<T>, node: T): void {
+export function push(heap, node) {
   // 1. 把node放到堆的最后
   const index = heap.length;
   heap.push(node);
@@ -19,10 +13,10 @@ export function push<T extends Node>(heap: Heap<T>, node: T): void {
 }
 
 // !从下往上堆化
-function siftUp<T extends Node>(heap: Heap<T>, node: T, i: number): void {
+function siftUp(heap, node, i) {
   let index = i;
   while (index > 0) {
-    const parentIndex = (index - 1) >>> 1;
+    const parentIndex = (index - 1) >>> 1; //x >>> 1表示的就是除以 2 后取整。  //你看父节点的索引值是不是就是 (子节点的索引值 - 1) / 2 后取整。
     const parent = heap[parentIndex];
     if (compare(parent, node) > 0) {
       // node子节点更小，和根节点交换
@@ -36,12 +30,13 @@ function siftUp<T extends Node>(heap: Heap<T>, node: T, i: number): void {
 }
 
 // !删除堆顶元素
-export function pop<T extends Node>(heap: Heap<T>): T | null {
+export function pop(heap) {
   if (heap.length === 0) {
     return null;
   }
   const first = heap[0];
-  const last = heap.pop()!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const last = heap.pop();
   if (first !== last) {
     // 证明heap中有2个或者更多个元素
     heap[0] = last;
@@ -51,7 +46,7 @@ export function pop<T extends Node>(heap: Heap<T>): T | null {
   return first;
 }
 
-function siftDown<T extends Node>(heap: Heap<T>, node: T, i: number): void {
+function siftDown(heap, node, i) {
   let index = i;
   const length = heap.length;
   const halfLength = length >>> 1;
@@ -85,18 +80,18 @@ function siftDown<T extends Node>(heap: Heap<T>, node: T, i: number): void {
   }
 }
 
-function compare(a: Node, b: Node) {
+function compare(a, b) {
   const diff = a.sortIndex - b.sortIndex;
-  return diff !== 0 ? diff : a?.id - b?.id;
+  return diff !== 0 ? diff : a?.id || 0 - (b?.id || 0);
 }
 
 const taskQueue = [
-  { id: 1, sortIndex: 2 },
-  { id: 2, sortIndex: 7 },
-  { id: 3, sortIndex: 5 },
-  { id: 4, sortIndex: 12 },
-  { id: 5, sortIndex: 22 },
-  { id: 6, sortIndex: 17 },
+  { sortIndex: 2 },
+  { sortIndex: 7 },
+  { sortIndex: 5 },
+  { sortIndex: 12 },
+  { sortIndex: 22 },
+  { sortIndex: 17 },
 ];
-push(taskQueue, { sortIndex: 1, id: 9 });
+push(taskQueue, { sortIndex: 1 });
 console.log(JSON.stringify(taskQueue));

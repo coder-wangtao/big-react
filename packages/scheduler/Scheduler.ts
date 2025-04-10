@@ -1,211 +1,217 @@
-//React 将更新任务拆成多个小任务，每个小任务的数据结构是一个带着 expirationTime 的对象，
-//expirationTime 表示这个任务的过期时间，expirationTime 越小就表示过期时间越近，
-//该任务的优先级就越高，取出最小值就相当于取出优先级最高的任务。
+// 引入最小堆封装代码
+import { push, pop, peek } from "./SchedulerMinHeap";
 
-// ! 实现一个单线程任务调度器
-import { peek, pop, push } from "./SchedulerMinHeap";
-import {
-  PriorityLevel,
-  NormalPriority,
-  IdlePriority,
-  ImmediatePriority,
-  LowPriority,
-  UserBlockingPriority,
-  NoPriority,
-} from "./SchedulerPriorities";
-import {
-  lowPriorityTimeout,
-  maxSigned31BitInt,
-  normalPriorityTimeout,
-  userBlockingPriorityTimeout,
-} from "./SchedulerFeatureFlags";
+// 浏览器提供的 API，获取从 time origin（当前文档生命周期的开始节点时间） 之后到当前调用时经过的时间，它以一个恒定的速率慢慢增加的，不会受到系统时间的影响，具体参考：https://juejin.cn/post/7171633315336683528
+const getCurrentTime = () => performance.now();
 
-type Callback = (arg: boolean) => Callback | null | undefined;
+// Scheduler 优先级划分，数字越小优先级越高，0 表示没有优先级
+export const NoPriority = 0;
+export const ImmediatePriority = 1;
+export const UserBlockingPriority = 2;
+export const NormalPriority = 3;
+export const LowPriority = 4;
+export const IdlePriority = 5;
 
-export function getCurrentTime(): number {
-  return performance.now();
-}
+// Scheduler 根据优先级设置的对应 timeout 时间，越小越紧急
+// 在 React 中，任务是可以被打断的，但是任务不能一直被打断，所以要设置一个超时时间，过了这个时间就必须立刻执行
+// timeout 就表示超时时间
+const IMMEDIATE_PRIORITY_TIMEOUT = -1; //ms
+const USER_BLOCKING_PRIORITY_TIMEOUT = 250; //ms
+const NORMAL_PRIORITY_TIMEOUT = 5000; //ms
+const LOW_PRIORITY_TIMEOUT = 10000; //ms
+// 为什么是 1073741823，查看：https://juejin.cn/post/7171633315336683528
+const IDLE_PRIORITY_TIMEOUT = 1073741823;
 
-//callback是任务的初始值
-//task是scheduler封装后的task
-//work是指一个时间切片内的工作单元
-export type Task = {
-  id: number;
-  callback: Callback | null;
-  priorityLevel: PriorityLevel;
-  startTime: number;
-  expirationTime: number; //代表优先级越高，越小就表示过期时间越近，该任务的优先级就越高。
-  sortIndex: number;
-};
+// 普通任务队列，它是一个最小堆结构，最小堆查看：https://juejin.cn/post/7168283003037155359
+const taskQueue = [] as any[];
 
-// 任务池，最小堆
-const taskQueue: Array<Task> = []; // 没有延迟的任务
-
-const timerQueue: Array<Task> = []; // 有延迟的任务
-
-//标记task的唯一性
+// 延时任务队列，它同样是一个最小堆结构
+const timerQueue = [] as any[];
+// taskId
 let taskIdCounter = 1;
 
-//当前执行的task
-let currentTask: Task | null = null;
-//当前当前执行的task 的 优先级
-let currentPriorityLevel: PriorityLevel = NoPriority;
-
-// 记录时间切片的起始值，时间戳
-let startTime = -1;
-
-// 时间切片，这是个时间段
-const frameInterval = 5;
-
-// 锁
-// 是否有 work 在执行
+// 任务队列是否正在被遍历执行，workLoop 执行前为 true，执行完成后改为 false
 let isPerformingWork = false;
-
-// 主线程是否在调度
+// 是否有正在执行的 requestHostCallback，它会在 requestHostCallback 调用前设为 true，workLoop 执行前改为 false
 let isHostCallbackScheduled = false;
-
+// 是否有正在执行的 requestHostTimeout，它会在 requestHostTimeout 执行前设为 true，cancenlHostTimeout 和 handleTimeout 中设为 false
+let isHostTimeoutScheduled = false;
+// message loop 是否正在执行，它会在 schedulePerformWorkUntilDeadline 前设为 true，在任务队列执行完毕后设为 false
 let isMessageLoopRunning = false;
 
-// 是否有任务在倒计时
-let isHostTimeoutScheduled = false;
+// 记录 requestHostCallback 执行时传入的 callback 函数，也就是 flushWork
+let scheduledHostCallback = null as any;
 
+// 用于 cancelHostTimeout 取消 requestHostTimeout
 let taskTimeoutID = -1;
 
-function shouldYieldToHost() {
-  const timeElapsed = getCurrentTime() - startTime;
+// 记录当前正在执行的任务
+let currentTask = null;
+let currentPriorityLevel = NormalPriority;
 
-  if (timeElapsed < frameInterval) {
-    return false;
-  }
-
-  return true;
-}
-
-// 任务调度器的入口函数
-function scheduleCallback(
-  priorityLevel: PriorityLevel,
-  callback: Callback,
-  options?: { delay: number },
+// 这里是调度的开始
+//scheduleCallback
+export function unstable_scheduleCallback(
+  priorityLevel: any,
+  callback: any,
+  options: any,
 ) {
   const currentTime = getCurrentTime();
-  let startTime;
 
+  // 任务被安排调度的时间，相当于去银行时的点击排号机器的那个时间
+  let startTime;
   if (typeof options === "object" && options !== null) {
     const delay = options.delay;
     if (typeof delay === "number" && delay > 0) {
-      // 有效的延迟时间
       startTime = currentTime + delay;
     } else {
-      // 无效的延迟时间
       startTime = currentTime;
     }
   } else {
-    // 无延迟
     startTime = currentTime;
   }
 
-  // expirationTime 是过期时间，理论上的任务执行时间
-
-  let timeout: number;
+  // 任务不能一直被打断，timeout 表示这个任务的超时时间
+  let timeout;
   switch (priorityLevel) {
     case ImmediatePriority:
-      // 立即超时，SVVVVIP
-      timeout = -1;
+      timeout = IMMEDIATE_PRIORITY_TIMEOUT;
       break;
     case UserBlockingPriority:
-      // 最终超时，VIP
-      timeout = userBlockingPriorityTimeout;
+      timeout = USER_BLOCKING_PRIORITY_TIMEOUT;
       break;
     case IdlePriority:
-      // 永不超时
-      timeout = maxSigned31BitInt;
+      timeout = IDLE_PRIORITY_TIMEOUT;
       break;
     case LowPriority:
-      // 最终超时
-      timeout = lowPriorityTimeout;
+      timeout = LOW_PRIORITY_TIMEOUT;
       break;
     case NormalPriority:
     default:
-      timeout = normalPriorityTimeout;
+      timeout = NORMAL_PRIORITY_TIMEOUT;
       break;
   }
 
+  // 任务的过期时间 = 开始调度的时间 + 超时时间  （这个值越小，说明越快过期，任务越紧急，越要优先执行。）
   const expirationTime = startTime + timeout;
-  const newTask: Task = {
+
+  // 这就是储存在任务队列（taskQueue 和 timerQueue）中的任务对象
+  const newTask = {
     id: taskIdCounter++,
     callback,
     priorityLevel,
     startTime,
     expirationTime,
-    sortIndex: -1,
+    sortIndex: -1, //它的 sortIndex，它就是任务排序的 key 值，这个值越小，在排序中就会越靠前。
   };
 
+  // 那判断大小的依据是什么呢？就是根据 newTask 的 sortIndex 字段，它的初始值是 -1，
+  // 在这段代码里，如果是普通任务，使用 expirationTime 作为 sortIndex 字段，如果是延时任务
+  // ，则使用 startTime 作为 sortIndex 字段。这个很好理解，任务都已经排上了，那就用过期时间，过期时间越小，
+  // 说明离现在越近，任务优先级越高，而延时任务，表示任务还没有排上，那就用排上的时间作为排序字段，等排上了，
+  // React 其实会将任务从 timerQueue 中移到 taskQueue 中。
+
+  // 如果 startTime > currentTime，说明是延时任务，将其放到 timerQueue
   if (startTime > currentTime) {
-    // newTask任务有延迟
     newTask.sortIndex = startTime;
-    // 任务在timerQueue到达开始时间之后，就会被推入 taskQueue
+    // 这个 push 是封装的最小堆 push 方法，将元素追加到数组后，它会再进行一个排序，保证最小值在数组的第一个
     push(timerQueue, newTask);
-    // 每次只倒计时一个任务
+    // peek(taskQueue) 获取 taskQueue 的第一个任务，因为是最小堆结构，获取的是最紧急的任务
+    // 这个逻辑是在 taskQueue 为空的情况下才会调用，这是因为 taskQueue 不为空的情况下，它会在每个任务执行的时候都会遍历一下 timerQueue，
+    // 将到期的任务移到 taskQueue
+    // newTask === peek(timerQueue) 表示新创建的任务就是最早的要安排调度的延时任务
+    //忽略
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
+      //如果 taskQueue 没有任务，并且创建的这个任务就是最早的延时任务，那就执行 cancelHostTimeout
+      // 保证最多只有一个 requestHostTimeout 在执行
       if (isHostTimeoutScheduled) {
-        // newTask 才是堆顶任务，才应该最先到达执行时间，newTask应该被倒计时，但是其他任务也被倒计时了，说明有问题
         cancelHostTimeout();
       } else {
         isHostTimeoutScheduled = true;
       }
-
+      // requestHostTimeout 本质是一个 setTimeout，时间到后，执行 handleTimeout
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
-  } else {
+  }
+  // 如果是正常任务，将其放到 taskQueue
+  else {
     newTask.sortIndex = expirationTime;
     push(taskQueue, newTask);
-
+    // 如果没有正在执行的 requestHostCallback 并且任务队列也没有被执行
     if (!isHostCallbackScheduled && !isPerformingWork) {
       isHostCallbackScheduled = true;
-      requestHostCallback();
+      //requestIdleCallback
+      requestHostCallback(flushWork);
     }
   }
+
+  return newTask;
 }
 
-function requestHostCallback() {
+//------------------------------------------------------------------------------------------
+// 你可以把这个函数理解为 requestIdleCallback，都实现了空闲时期执行代码
+function requestHostCallback(callback: any) {
+  // 将 callback 函数存为全局变量，传入的是 flushWork 这个函数
+  scheduledHostCallback = callback;
   if (!isMessageLoopRunning) {
     isMessageLoopRunning = true;
     schedulePerformWorkUntilDeadline();
   }
 }
 
-function performWorkUntilDeadline() {
-  if (isMessageLoopRunning) {
-    const currentTime = getCurrentTime();
-    // 记录了一个work的起始时间，其实就是一个时间切片的起始时间，这是个时间戳
-    startTime = currentTime;
-    let hasMoreWork = true;
-    try {
-      hasMoreWork = flushWork(currentTime);
-    } finally {
-      if (hasMoreWork) {
-        schedulePerformWorkUntilDeadline();
-      } else {
-        isMessageLoopRunning = false;
-      }
-    }
-  }
-}
-
 const channel = new MessageChannel();
 const port = channel.port2;
 channel.port1.onmessage = performWorkUntilDeadline;
+//让出线程，告诉浏览器登空闲了再执行任务队列
 function schedulePerformWorkUntilDeadline() {
   port.postMessage(null);
 }
 
-function flushWork(initialTime: number) {
-  isHostCallbackScheduled = false;
-  isPerformingWork = true;
+// 批量任务的开始时间
+// React 并不是每一个任务执行完都执行 schedulePerformWorkUntilDeadline 让出线程的，而是执行完一个任务，
+// 看看过了多久，如果时间不超过 5ms，那就再执行一个任务，等做完一个任务，发现过了 5ms，
+// 这才让出线程，所以 React 是一批一批任务执行的，startTime 记录的是这一批任务的开始时间，而不是单个任务的开始时间。
+let startTime = -1;
+////通知浏览器等忙完自己的事情，再执行 performWorkUntilDeadline。
+function performWorkUntilDeadline() {
+  // scheduledHostCallback 就是 flushWork 这个函数
+  if (scheduledHostCallback !== null) {
+    const currentTime = getCurrentTime();
+    startTime = currentTime;
+    const hasTimeRemaining = true;
+    let hasMoreWork = true;
+    try {
+      hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
+    } finally {
+      if (hasMoreWork) {
+        //让出线程，告诉浏览器登空闲了再执行任务队列
+        schedulePerformWorkUntilDeadline();
+      } else {
+        isMessageLoopRunning = false;
+        scheduledHostCallback = null;
+      }
+    }
+  } else {
+    isMessageLoopRunning = false;
+  }
+}
+//------------------------------------------------------------------------------------------
 
+function flushWork(hasTimeRemaining: any, initialTime: any) {
+  isHostCallbackScheduled = false;
+  // 定时器的目的表面上是为了保证最早的延时任务准时安排调度，实际上是为了保证 timerQueue 中的任务都能被执行。
+  // 定时器到期后，我们会执行 advanceTimers 和 flushWork，flushWork 中会执行 workLoop，
+  // workLoop 中会将 taskQueue 中的任务不断执行，当 taskQueue 执行完毕后，
+  // workLoop 会选择 timerQueue 中的最早的任务重新设置一个定时器。所以如果 flushWork 执行了，定时器也就没有必要了，所以可以取消了。
+  if (isHostTimeoutScheduled) {
+    isHostTimeoutScheduled = false;
+    cancelHostTimeout();
+  }
+
+  isPerformingWork = true;
   const previousPriorityLevel = currentPriorityLevel;
   try {
-    return workLoop(initialTime);
+    return workLoop(hasTimeRemaining, initialTime);
   } finally {
     currentTask = null;
     currentPriorityLevel = previousPriorityLevel;
@@ -213,92 +219,72 @@ function flushWork(initialTime: number) {
   }
 }
 
-// 取消某个任务，由于最小堆没法直接删除，因此只能初步把 task.callback 设置为null
-// 调度过程中，当这个任务位于堆顶时，删掉
-function cancelCallback() {
-  currentTask!.callback = null;
-}
-
-function getCurrentPriorityLevel(): PriorityLevel {
-  return currentPriorityLevel;
-}
-
-// 有很多task，每个task都有一个callback，callback执行完了，就执行下一个task
-// 一个work就是一个时间切片内执行的一些task
-// 时间切片要循环，就是work要循环(loop)
-// 返回为true，表示还有任务没有执行完，需要继续执行
-function workLoop(initialTime: number): boolean {
+// 遍历 taskQueue，执行任务
+function workLoop(hasTimeRemaining: any, initialTime: any) {
+  console.log("workLoop start");
   let currentTime = initialTime;
+  // 检查 timerQueue 中的任务，将到期的任务转到 taskQueue 中
   advanceTimers(currentTime);
   currentTask = peek(taskQueue);
   while (currentTask !== null) {
+    // 如果任务还没有到过期时间并且 shouldYieldToHost 返回 true
     if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
       break;
     }
-
-    // 执行任务
+    // 获取任务执行函数
     const callback = currentTask.callback;
     if (typeof callback === "function") {
-      // 有效的任务
       currentTask.callback = null;
       currentPriorityLevel = currentTask.priorityLevel;
+      // 该任务执行的时候是否已经过期
       const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
+      // 任务函数执行
       const continuationCallback = callback(didUserCallbackTimeout);
       currentTime = getCurrentTime();
+      // React 中单个任务在执行的时候，也是可以被打断的，如果单个任务执行的时候被打断，会返回一个函数
+      // 这个任务被打断了
       if (typeof continuationCallback === "function") {
         currentTask.callback = continuationCallback;
-        advanceTimers(currentTime);
-        return true;
-      } else {
+      }
+      // 这个任务执行完毕
+      else {
         if (currentTask === peek(taskQueue)) {
           pop(taskQueue);
         }
-        advanceTimers(currentTime);
       }
-    } else {
-      // 无效的任务
+      // 检查任务队列
+      advanceTimers(currentTime);
+    }
+    // 说明任务执行完毕
+    else {
       pop(taskQueue);
     }
-
+    // 执行下一个任务
     currentTask = peek(taskQueue);
   }
 
   if (currentTask !== null) {
     return true;
   } else {
+    //我们执行完任务，如果 taskQueue 为空，并且 timerQueue 中还有任务，那我们就再创建一个定时器。
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
     }
-
     return false;
   }
 }
 
-function requestHostTimeout(
-  callback: (currentTime: number) => void,
-  ms: number,
-) {
-  taskTimeoutID = setTimeout(() => {
-    callback(getCurrentTime());
-  }, ms);
-}
-
-// delay任务处理逻辑
-function cancelHostTimeout() {
-  clearTimeout(taskTimeoutID);
-  taskTimeoutID = -1;
-}
-
-function advanceTimers(currentTime: number) {
+// 检查 timerQueue 中的任务，将到期的任务转到 taskQueue 中
+function advanceTimers(currentTime: any) {
   let timer = peek(timerQueue);
   while (timer !== null) {
+    // 任务被取消了
     if (timer.callback === null) {
-      // 无效的任务
       pop(timerQueue);
-    } else if (timer.startTime <= currentTime) {
-      // 有效的任务
-      // 任务已经到达开始时间，可以推入taskQueue
+    }
+    // //任务到期就转到 taskQueue 中
+    else if (timer.startTime <= currentTime) {
       pop(timerQueue);
       timer.sortIndex = timer.expirationTime;
       push(taskQueue, timer);
@@ -309,16 +295,52 @@ function advanceTimers(currentTime: number) {
   }
 }
 
-function handleTimeout(currentTime: number) {
+export function getFirstCallbackNode() {
+  return peek(taskQueue);
+}
+
+// 默认时间切片为 5ms
+const frameInterval = 5;
+
+// 判断是否让出线程，主要看这批任务自开始过了多久，超过了切片时间，就让出线程
+export function shouldYieldToHost() {
+  const timeElapsed = getCurrentTime() - startTime;
+  if (timeElapsed < frameInterval) {
+    return false;
+  }
+
+  return true;
+}
+
+// requestHostTimeout 就是一个 setTimeout 的封装，所谓延时任务，就是一个延时安排调度的任务，
+// 怎么保证在延时时间达到后立刻安排调度呢?React 就用了 setTimeout，计算 startTime - currentTime 来实现，
+// 我们也可以想出，handleTimeout 的作用就是安排调度。
+function requestHostTimeout(callback: any, ms: any) {
+  taskTimeoutID = setTimeout(() => {
+    callback(getCurrentTime());
+  }, ms);
+}
+
+function cancelHostTimeout() {
+  clearTimeout(taskTimeoutID);
+  taskTimeoutID = -1;
+}
+
+export function cancelCallback(task: any) {
+  task.callback = null;
+}
+
+function handleTimeout(currentTime: any) {
   isHostTimeoutScheduled = false;
-  //  把延迟任务从timerQueue中推入taskQueue
   advanceTimers(currentTime);
 
   if (!isHostCallbackScheduled) {
     if (peek(taskQueue) !== null) {
       isHostCallbackScheduled = true;
-      requestHostCallback();
-    } else {
+      requestHostCallback(flushWork);
+    }
+    // 延时任务可能被取消了
+    else {
       const firstTimer = peek(timerQueue);
       if (firstTimer !== null) {
         requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
@@ -326,15 +348,25 @@ function handleTimeout(currentTime: number) {
     }
   }
 }
-// todo 实现一个单线程任务调度器
-export {
-  ImmediatePriority,
-  UserBlockingPriority,
-  NormalPriority,
-  IdlePriority,
-  LowPriority,
-  scheduleCallback, // 某个任务进入调度器，等待调度
-  cancelCallback, // 取消某个任务，由于最小堆没法直接删除，因此只能初步把 task.callback 设置为null
-  getCurrentPriorityLevel, // 获取当前正在执行任务的优先级
-  shouldYieldToHost as shouldYield, // 把控制权交换给主线程
-};
+
+//普通任务
+// 当创建一个调度任务的时候（unstable_scheduleCallback），会传入优先级（priorityLevel）、执行函数（callback），可选项（options），
+// React 会根据任务优先级创建 task 对象，并根据可选项中的 delay 参数判断是将任务放到普通任务队列（taskQueue），还是延时任务队列（timerQueue）。
+// 当放到普通任务队列后，便会执行 requestHostCallback(flushWork)，requestHostCallback 的作用是借助 Message Channel 将线程让出来，
+// 让浏览器可以处理动画或者用户输入，当浏览器空闲的时候，便会执行 flushWork 函数，flushWork 的作用是执行任务队列里的任务，它会执行 advanceTimers，
+// 不断地将 timerQueue 中到期的任务添加到 taskQueue，它会执行 taskQueue 中优先级最高的任务，当任务函数执行完毕之后，它会判断过了多久，
+// 如果时间还没有到一个切片时间（5ms），便会执行队列里的下个优先级最高的任务，一直到超出切片时间，当超出时间之后，React 会让出线程，
+// 等待浏览器下次继续执行 flushWork，也就是再次遍历执行任务队列，直到任务队列中的任务全部完成。
+
+//延时任务
+// 在 Scheduler 中，最多只有一个定时器在执行（requestHostTimeout），时间为所有延时任务中延时时间最小的那个，如果创建的新任务是最小的那个，
+// 那就取消掉之前的，使用新任务的延时时间再创建一个定时器，定时器到期后，我们会将该任务安排调度（handleTimeout）
+// 但这个逻辑只在 taskQueue 没有任务的时候，如果 taskQueue 有任务呢？
+// 如果 taskQueue 有任务，在每个任务完成的时候，React 都会调用 advanceTimers ，检查 timerQueue 中到期的延时任务，将其转移到 taskQueue 中，
+// 所以没有必要再检查一遍了。
+// 总结一下：如果 taskQueue 为空，我们的延时任务会创建最多一个定时器，在定时器到期后，将该任务安排调度（将任务添加到 taskQueue 中）。
+// 如果 taskQueue 列表不为空，我们在每个普通任务执行完后都会检查是否有任务到期了，然后将到期的任务添加到 taskQueue 中。
+// 但这个逻辑里有一个漏洞：
+// 我们新添加一个普通任务，假设该任务执行时间为 5ms，再添加一个延时任务，delay 为 10ms。
+// 因为创建延时任务的时候 taskQueue 中有值，所以不会创建定时器，当普通任务执行完毕后，我们执行 advanceTimers，因为延时任务没有到期，
+// 所以也不会添加到 taskQueue 中，那么这个延时任务就不会有定时器让它准时进入调度。如果没有新的任务出现，它永远都不会执行。

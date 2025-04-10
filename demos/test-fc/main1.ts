@@ -1,14 +1,15 @@
 import {
-  ImmediatePriority,
-  UserBlockingPriority,
-  NormalPriority,
-  LowPriority,
-  IdlePriority,
+  unstable_ImmediatePriority as ImmediatePriority,
+  unstable_UserBlockingPriority as UserBlockingPriority,
+  unstable_NormalPriority as NormalPriority,
+  unstable_LowPriority as LowPriority,
+  unstable_IdlePriority as IdlePriority,
   unstable_scheduleCallback as scheduleCallback,
-  shouldYieldToHost,
-  getFirstCallbackNode,
-  cancelCallback,
-} from "../../packages/scheduler/Scheduler";
+  unstable_shouldYield as shouldYield,
+  CallbackNode,
+  unstable_getFirstCallbackNode as getFirstCallbackNode,
+  unstable_cancelCallback as cancelCallback,
+} from "scheduler";
 
 import "./style.css";
 const button = document.querySelector("b utton");
@@ -29,7 +30,7 @@ interface Work {
 //任务列表，类比为react中的渲染任务
 const workList: Work[] = [];
 let prevPriority: Priority = IdlePriority;
-let curCallback: any | null = null;
+let curCallback: CallbackNode | null = null;
 
 [LowPriority, NormalPriority, UserBlockingPriority, ImmediatePriority].forEach(
   (priority) => {
@@ -53,7 +54,7 @@ let curCallback: any | null = null;
 );
 
 function schedule() {
-  const cbNode = getFirstCallbackNode(); //获取堆上最顶的（优先级最高的）
+  const cbNode = getFirstCallbackNode();
 
   //当前的任务，把最高优先级的挑选出来
   const curWork = workList.sort((w1, w2) => w1.priority - w2.priority)[0];
@@ -87,7 +88,7 @@ function perform(work: Work, didTimeout?: boolean) {
   //shouldYield()会在while过程中，不断地去计算，此时我们还有没有剩余时间
   //一轮事件循环，留给任务的处理的时间，大概是7 8ms
   const needSync = work.priority === ImmediatePriority || didTimeout;
-  while ((needSync || !shouldYieldToHost()) && work.count) {
+  while ((needSync || !shouldYield()) && work.count) {
     work.count--;
     insertSpan(work.priority + "");
   }

@@ -10,7 +10,6 @@ let scheduledHostCallback;
 let isMessageLoopRunning = false;
 let getCurrentTime = () => performance.now();
 
-//任务列表
 const taskQueue = [
   {
     expirationTime: 1000000,
@@ -35,6 +34,8 @@ const taskQueue = [
   },
 ];
 
+//----------------------------------------------------------------------------
+//requestHostCallback其实就是requestIdleCallback
 function requestHostCallback(callback) {
   scheduledHostCallback = callback;
   if (!isMessageLoopRunning) {
@@ -46,6 +47,7 @@ function requestHostCallback(callback) {
 const channel = new MessageChannel();
 const port = channel.port2;
 
+//通知浏览器等忙完自己的事情，再执行 performWorkUntilDeadline。
 function performWorkUntilDeadline() {
   if (scheduledHostCallback !== null) {
     const currentTime = getCurrentTime();
@@ -56,7 +58,7 @@ function performWorkUntilDeadline() {
     try {
       hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
     } finally {
-      console.log("hasMoreWork", hasMoreWork);
+      // console.log("hasMoreWork", hasMoreWork);
       if (hasMoreWork) {
         schedulePerformWorkUntilDeadline();
       } else {
@@ -71,9 +73,11 @@ function performWorkUntilDeadline() {
 
 channel.port1.onmessage = performWorkUntilDeadline;
 
+//它只做了一件事情，就是 postMessage，
 let schedulePerformWorkUntilDeadline = () => {
   port.postMessage(null);
 };
+//----------------------------------------------------------------------------
 
 function flushWork(hasTimeRemaining, initialTime) {
   return workLoop(hasTimeRemaining, initialTime);
@@ -82,8 +86,10 @@ function flushWork(hasTimeRemaining, initialTime) {
 let currentTask;
 
 function workLoop(hasTimeRemaining, initialTime) {
+  //initialTime: postMessage 的消息时执行 performWorkUntilDeadline 函数的时间
   currentTask = taskQueue[0];
   while (currentTask != null) {
+    // console.log(currentTask);
     if (
       currentTask.expirationTime > initialTime &&
       (!hasTimeRemaining || shouldYieldToHost())

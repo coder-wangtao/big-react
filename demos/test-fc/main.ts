@@ -56,20 +56,21 @@ function schedule() {
   const cbNode = getFirstCallbackNode(); //获取堆上最顶的（优先级最高的）
 
   //当前的任务，把最高优先级的挑选出来
-  const curWork = workList.sort((w1, w2) => w1.priority - w2.priority)[0];
+  const curWork = workList.sort((w1, w2) => w1.priority - w2.priority)[0]; //{count:100,priority:3}
 
-  // 策略逻辑
   if (!curWork) {
     curCallback = null;
     cbNode && cancelCallback(cbNode);
     return;
   }
 
+  //优先级不变时跳过调度
   const { priority: curPriority } = curWork;
   if (curPriority === prevPriority) {
     return;
   }
   // 更高优先级的work
+  //如果已经有待执行的回调节点（cbNode），则取消它。这是为了确保我们总是执行优先级最高的任务。
   cbNode && cancelCallback(cbNode);
 
   //scheduleCallback就是一个宏任务处理器，可以类比为setTimeout，postMessage
@@ -87,6 +88,8 @@ function perform(work: Work, didTimeout?: boolean) {
   //shouldYield()会在while过程中，不断地去计算，此时我们还有没有剩余时间
   //一轮事件循环，留给任务的处理的时间，大概是7 8ms
   const needSync = work.priority === ImmediatePriority || didTimeout;
+
+  //!shouldYieldToHost()有时间
   while ((needSync || !shouldYieldToHost()) && work.count) {
     work.count--;
     insertSpan(work.priority + "");
@@ -96,11 +99,11 @@ function perform(work: Work, didTimeout?: boolean) {
   prevPriority = work.priority;
 
   if (!work.count) {
+    //当前任务结束
     const workIndex = workList.indexOf(work);
     workList.splice(workIndex, 1);
     prevPriority = IdlePriority;
   }
-
   const prevCallback = curCallback;
   schedule();
   const newCallback = curCallback;

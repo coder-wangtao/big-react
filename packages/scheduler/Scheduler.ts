@@ -96,6 +96,7 @@ export function unstable_scheduleCallback(
   const expirationTime = startTime + timeout;
 
   // 这就是储存在任务队列（taskQueue 和 timerQueue）中的任务对象
+
   const newTask = {
     id: taskIdCounter++,
     callback,
@@ -122,14 +123,14 @@ export function unstable_scheduleCallback(
     // newTask === peek(timerQueue) 表示新创建的任务就是最早的要安排调度的延时任务
     //忽略
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
-      //如果 taskQueue 没有任务，并且创建的这个任务就是最早的延时任务，那就执行 cancelHostTimeout
-      // 保证最多只有一个 requestHostTimeout 在执行
+      // //如果 taskQueue 没有任务，并且创建的这个任务就是最早的延时任务，那就执行 cancelHostTimeout
+      // // 保证最多只有一个 requestHostTimeout 在执行
       if (isHostTimeoutScheduled) {
         cancelHostTimeout();
       } else {
         isHostTimeoutScheduled = true;
       }
-      // requestHostTimeout 本质是一个 setTimeout，时间到后，执行 handleTimeout
+      // // requestHostTimeout 本质是一个 setTimeout，时间到后，执行 handleTimeout
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
   }
@@ -199,6 +200,7 @@ function performWorkUntilDeadline() {
 
 function flushWork(hasTimeRemaining: any, initialTime: any) {
   isHostCallbackScheduled = false;
+
   // 定时器的目的表面上是为了保证最早的延时任务准时安排调度，实际上是为了保证 timerQueue 中的任务都能被执行。
   // 定时器到期后，我们会执行 advanceTimers 和 flushWork，flushWork 中会执行 workLoop，
   // workLoop 中会将 taskQueue 中的任务不断执行，当 taskQueue 执行完毕后，
@@ -221,11 +223,11 @@ function flushWork(hasTimeRemaining: any, initialTime: any) {
 
 // 遍历 taskQueue，执行任务
 function workLoop(hasTimeRemaining: any, initialTime: any) {
-  console.log("workLoop start");
   let currentTime = initialTime;
   // 检查 timerQueue 中的任务，将到期的任务转到 taskQueue 中
   advanceTimers(currentTime);
   currentTask = peek(taskQueue);
+
   while (currentTask !== null) {
     // 如果任务还没有到过期时间并且 shouldYieldToHost 返回 true
     if (currentTask.expirationTime > currentTime && shouldYieldToHost()) {
@@ -237,12 +239,12 @@ function workLoop(hasTimeRemaining: any, initialTime: any) {
       currentTask.callback = null;
       currentPriorityLevel = currentTask.priorityLevel;
       // 该任务执行的时候是否已经过期
-      const didUserCallbackTimeout = currentTask.expirationTime <= currentTime;
+      const didUserCallbackTimeout = currentTask.expirationTime <= currentTime; //已过期
       // 任务函数执行
+      //如果回调函数返回的是一个新的函数（即continuationCallback）继续执行任务
       const continuationCallback = callback(didUserCallbackTimeout);
       currentTime = getCurrentTime();
-      // React 中单个任务在执行的时候，也是可以被打断的，如果单个任务执行的时候被打断，会返回一个函数
-      // 这个任务被打断了
+      //继续执行任务
       if (typeof continuationCallback === "function") {
         currentTask.callback = continuationCallback;
       }
@@ -262,6 +264,8 @@ function workLoop(hasTimeRemaining: any, initialTime: any) {
     // 执行下一个任务
     currentTask = peek(taskQueue);
   }
+
+  //任务已经过期了（下一次就要执行这个任务） 或者  让出线程（时间超过5秒）
 
   if (currentTask !== null) {
     return true;

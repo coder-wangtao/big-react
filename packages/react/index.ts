@@ -9,6 +9,8 @@ export { REACT_FRAGMENT_TYPE as Fragment } from "shared/ReactSymbol";
 export { createContext } from "./src/context";
 export { REACT_SUSPENSE_TYPE as Suspense } from "shared/ReactSymbol";
 export { memo } from "./src/memo";
+export { lazy } from "./src/lazy";
+
 // React
 
 export const useState: Dispatcher["useState"] = (initialState) => {

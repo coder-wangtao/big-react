@@ -61,9 +61,16 @@ const RootDidNotComplete = 3;
 let workInProgressRootExitStatus: number = RootInProgress;
 
 // Suspense
-type SuspendedReason = typeof NotSuspended | typeof SuspendedOnData;
+type SuspendedReason =
+  | typeof NotSuspended
+  | typeof SuspendedOnError
+  | typeof SuspendedOnData
+  | typeof SuspendedOnDeprecatedThrowPromise;
 const NotSuspended = 0;
-const SuspendedOnData = 6;
+const SuspendedOnError = 1;
+const SuspendedOnData = 2;
+const SuspendedOnDeprecatedThrowPromise = 4;
+
 let workInProgressSuspendedReason: SuspendedReason = NotSuspended;
 let workInProgressThrownValue: any = null;
 
@@ -123,7 +130,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
   if (updateLane === SyncLane) {
     // 同步优先级 用微任务调度
     // [performSyncWorkOnRoot, performSyncWorkOnRoot, performSyncWorkOnRoot]
-    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
+    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane));
     scheduleMicroTask(flushSyncCallbacks);
   } else {
     // 其他优先级 用宏任务调度
@@ -429,7 +436,15 @@ function handleThrow(root: FiberRootNode, thrownValue: any): void {
     workInProgressSuspendedReason = SuspendedOnData;
     thrownValue = getSuspenseThenable();
   } else {
-    // TODO Error Boundary
+    const isWakeable =
+      thrownValue !== null &&
+      typeof thrownValue === "object" &&
+      typeof thrownValue.then === "function";
+
+    workInProgressThrownValue = thrownValue;
+    workInProgressSuspendedReason = isWakeable
+      ? SuspendedOnDeprecatedThrowPromise
+      : SuspendedOnError;
   }
   workInProgressThrownValue = thrownValue;
 }

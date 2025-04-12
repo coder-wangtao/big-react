@@ -61,16 +61,9 @@ const RootDidNotComplete = 3;
 let workInProgressRootExitStatus: number = RootInProgress;
 
 // Suspense
-type SuspendedReason =
-  | typeof NotSuspended
-  | typeof SuspendedOnError
-  | typeof SuspendedOnData
-  | typeof SuspendedOnDeprecatedThrowPromise;
+type SuspendedReason = typeof NotSuspended | typeof SuspendedOnData;
 const NotSuspended = 0;
-const SuspendedOnError = 1;
-const SuspendedOnData = 2;
-const SuspendedOnDeprecatedThrowPromise = 4;
-
+const SuspendedOnData = 6;
 let workInProgressSuspendedReason: SuspendedReason = NotSuspended;
 let workInProgressThrownValue: any = null;
 
@@ -89,7 +82,7 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
   // fiberRootNode
-  const root = markUpdateFromFiberToRoot(fiber);
+  const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   markRootUpdated(root, lane);
   ensureRootIsScheduled(root);
 }
@@ -150,10 +143,16 @@ export function markRootUpdated(root: FiberRootNode, lane: Lane) {
   root.pendingLanes = mergeLanes(root.pendingLanes, lane);
 }
 
-export function markUpdateFromFiberToRoot(fiber: FiberNode) {
+export function markUpdateLaneFromFiberToRoot(fiber: FiberNode, lane: Lane) {
   let node = fiber;
   let parent = node.return;
   while (parent !== null) {
+    parent.childLanes = mergeLanes(parent.childLanes, lane);
+    const alternate = parent.alternate;
+    if (alternate !== null) {
+      alternate.childLanes = mergeLanes(alternate.childLanes, lane);
+    }
+
     node = parent;
     parent = node.return;
   }
@@ -244,6 +243,8 @@ function performSyncWorkOnRoot(root: FiberRootNode) {
   }
 }
 
+let c = 0;
+
 function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
   if (__DEV__) {
     console.log(`开始${shouldTimeSlice ? "并发" : "同步"}更新`, root);
@@ -273,6 +274,11 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
     } catch (e) {
       if (__DEV__) {
         console.warn("workLoop发生错误", e);
+      }
+      c++;
+      if (c > 20) {
+        break;
+        console.warn("break!");
       }
       handleThrow(root, e);
     }
@@ -423,15 +429,7 @@ function handleThrow(root: FiberRootNode, thrownValue: any): void {
     workInProgressSuspendedReason = SuspendedOnData;
     thrownValue = getSuspenseThenable();
   } else {
-    const isWakeable =
-      thrownValue !== null &&
-      typeof thrownValue === "object" &&
-      typeof thrownValue.then === "function";
-
-    workInProgressThrownValue = thrownValue;
-    workInProgressSuspendedReason = isWakeable
-      ? SuspendedOnDeprecatedThrowPromise
-      : SuspendedOnError;
+    // TODO Error Boundary
   }
   workInProgressThrownValue = thrownValue;
 }

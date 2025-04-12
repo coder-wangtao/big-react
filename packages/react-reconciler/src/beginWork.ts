@@ -20,6 +20,7 @@ import {
   MemoComponent,
   OffscreenComponent,
   SuspenseComponent,
+  LazyComponent,
 } from "./workTags";
 import {
   Ref,
@@ -78,7 +79,7 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
           // TODO Suspense
         }
 
-        return bailouOnAlreadyFinishedWork(wip, renderLane);
+        return bailoutOnAlreadyFinishedWork(wip, renderLane);
       }
     }
   }
@@ -103,6 +104,8 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
       return updateSuspenseComponent(wip);
     case OffscreenComponent:
       return updateOffscreenComponent(wip);
+    case LazyComponent:
+      return mountLazyComponent(wip, renderLane);
     case MemoComponent:
       return updateMemoComponent(wip, renderLane);
     default:
@@ -114,6 +117,17 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   return null;
 };
 
+function mountLazyComponent(wip: FiberNode, renderLane: Lane) {
+  const LazyType = wip.type;
+  const payload = LazyType._payload;
+  const init = LazyType._init;
+  const Component = init(payload);
+  wip.type = Component;
+  wip.tag = FunctionComponent;
+  const child = updateFunctionComponent(wip, Component, renderLane);
+  return child;
+}
+
 function updateMemoComponent(wip: FiberNode, renderLane: Lane) {
   // bailout四要素
   // props浅比较
@@ -124,23 +138,23 @@ function updateMemoComponent(wip: FiberNode, renderLane: Lane) {
   if (current !== null) {
     const prevProps = current.memoizedProps;
 
-    // 浅比较props
-    if (shallowEqual(prevProps, nextProps) && current.ref === wip.ref) {
-      didReceiveUpdate = false;
-      wip.pendingProps = prevProps;
+    // state context
+    if (!checkScheduledUpdateOrContext(current, renderLane)) {
+      // 浅比较props
+      if (shallowEqual(prevProps, nextProps) && current.ref === wip.ref) {
+        didReceiveUpdate = false;
+        wip.pendingProps = prevProps;
 
-      // state context
-      if (!checkScheduledUpdateOrContext(current, renderLane)) {
         // 满足四要素
         wip.lanes = current.lanes;
-        return bailouOnAlreadyFinishedWork(wip, renderLane);
+        return bailoutOnAlreadyFinishedWork(wip, renderLane);
       }
     }
   }
   return updateFunctionComponent(wip, Component, renderLane);
 }
 
-function bailouOnAlreadyFinishedWork(wip: FiberNode, renderLane: Lane) {
+function bailoutOnAlreadyFinishedWork(wip: FiberNode, renderLane: Lane) {
   if (!includeSomeLanes(wip.childLanes, renderLane)) {
     if (__DEV__) {
       console.warn("bailout整棵子树", wip);
@@ -183,7 +197,7 @@ function updateContextProvider(wip: FiberNode, renderLane: Lane) {
       Object.is(oldValue, newValue) &&
       oldProps.children === newProps.children
     ) {
-      return bailouOnAlreadyFinishedWork(wip, renderLane);
+      return bailoutOnAlreadyFinishedWork(wip, renderLane);
     } else {
       propagateContextChange(wip, context, renderLane);
     }
@@ -212,7 +226,7 @@ function updateFunctionComponent(
   const current = wip.alternate;
   if (current !== null && !didReceiveUpdate) {
     bailoutHook(wip, renderLane);
-    return bailouOnAlreadyFinishedWork(wip, renderLane);
+    return bailoutOnAlreadyFinishedWork(wip, renderLane);
   }
 
   reconcileChildren(wip, nextChildren);
@@ -240,7 +254,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
 
   const nextChildren = wip.memoizedState;
   if (prevChildren === nextChildren) {
-    return bailouOnAlreadyFinishedWork(wip, renderLane);
+    return bailoutOnAlreadyFinishedWork(wip, renderLane);
   }
   reconcileChildren(wip, nextChildren);
   return wip.child;

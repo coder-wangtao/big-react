@@ -1,6 +1,5 @@
 import { Dispatch } from "react/src/currentDispatcher";
 import { Dispatcher } from "react/src/currentDispatcher";
-import currentBatchConfig from "react/src/currentBatchConfig";
 import internals from "shared/internals";
 import { Action, ReactContext, Thenable, Usable } from "shared/ReactTypes";
 import { FiberNode } from "./fiber";
@@ -34,7 +33,7 @@ let workInProgressHook: Hook | null = null;
 let currentHook: Hook | null = null;
 let renderLane: Lane = NoLane;
 
-const { currentDispatcher } = internals;
+const { currentDispatcher, currentBatchConfig } = internals;
 
 function readContext<Value>(context: ReactContext<Value>): Value {
   const consumer = currentlyRenderingFiber as FiberNode;
@@ -410,11 +409,11 @@ function dispatchSetState<State>(
     // 当前产生的update是这个fiber的第一个update
     // 1. 更新前的状态 2.计算状态的方法
     const currentState = updateQueue.lastRenderedState;
-    const eagarState = basicStateReducer(currentState, action);
+    const eagerState = basicStateReducer(currentState, action);
     update.hasEagerState = true;
-    update.eagerState = eagarState;
+    update.eagerState = eagerState;
 
-    if (Object.is(currentState, eagarState)) {
+    if (Object.is(currentState, eagerState)) {
       enqueueUpdate(updateQueue, update, fiber, NoLane);
       // 命中eagerState
       if (__DEV__) {

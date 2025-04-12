@@ -7,6 +7,7 @@ import {
   WorkTag,
   SuspenseComponent,
   OffscreenComponent,
+  LazyComponent,
   MemoComponent,
 } from "./workTags";
 import { Flags, NoFlags } from "./fiberFlags";
@@ -17,6 +18,7 @@ import { CallbackNode } from "scheduler";
 import {
   REACT_MEMO_TYPE,
   REACT_PROVIDER_TYPE,
+  REACT_LAZY_TYPE,
   REACT_SUSPENSE_TYPE,
 } from "shared/ReactSymbol";
 import { ContextItem } from "./fiberContext";
@@ -185,6 +187,9 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
         break;
       case REACT_MEMO_TYPE:
         fiberTag = MemoComponent;
+        break;
+      case REACT_LAZY_TYPE:
+        fiberTag = LazyComponent;
         break;
       default:
         console.warn("未定义的type类型", element);

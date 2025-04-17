@@ -222,7 +222,6 @@ function updateFunctionComponent(
   prepareToReadContext(wip, renderLane);
   // render
   const nextChildren = renderWithHooks(wip, Component, renderLane);
-
   const current = wip.alternate;
   if (current !== null && !didReceiveUpdate) {
     bailoutHook(wip, renderLane);

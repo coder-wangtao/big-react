@@ -90,7 +90,9 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
   // fiberRootNode
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
+
   markRootUpdated(root, lane);
+
   ensureRootIsScheduled(root);
 }
 
@@ -98,7 +100,6 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 export function ensureRootIsScheduled(root: FiberRootNode) {
   const updateLane = getNextLane(root);
   const existingCallback = root.callbackNode;
-
   if (updateLane === NoLane) {
     if (existingCallback !== null) {
       unstable_cancelCallback(existingCallback);
@@ -130,7 +131,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
   if (updateLane === SyncLane) {
     // 同步优先级 用微任务调度
     // [performSyncWorkOnRoot, performSyncWorkOnRoot, performSyncWorkOnRoot]
-    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root, updateLane));
+    scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
     scheduleMicroTask(flushSyncCallbacks);
   } else {
     // 其他优先级 用宏任务调度
@@ -226,7 +227,6 @@ function performSyncWorkOnRoot(root: FiberRootNode) {
     ensureRootIsScheduled(root);
     return;
   }
-
   const exitStatus = renderRoot(root, nextLane, false);
 
   switch (exitStatus) {
@@ -258,10 +258,8 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
   }
 
   if (wipRootRenderLane !== lane) {
-    // 初始化
     prepareFreshStack(root, lane);
   }
-
   do {
     try {
       if (

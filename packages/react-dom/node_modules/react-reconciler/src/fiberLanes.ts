@@ -11,17 +11,14 @@ import { FiberRootNode } from "./fiber";
 export type Lane = number;
 export type Lanes = number;
 
-export const SyncLane = 0b00001;
-export const NoLane = 0b00000;
-export const NoLanes = 0b00000;
-export const InputContinuousLane = 0b00010;
-export const DefaultLane = 0b00100;
-export const TransitionLane = 0b01000;
-export const IdleLane = 0b10000;
-
-export function mergeLanes(laneA: Lane, laneB: Lane): Lanes {
-  return laneA | laneB;
-}
+//lane 是一个 32 位的二进制数，每个二进制位表示 1 种优先级，优先级最高的 SyncLane 为 1，其次为 2、4、8 等
+export const SyncLane = 0b00001; //1  同步优先级
+export const NoLane = 0b00000; //0
+export const NoLanes = 0b00000; //0
+export const InputContinuousLane = 0b00010; //2
+export const DefaultLane = 0b00100; //4
+export const TransitionLane = 0b01000; //8
+export const IdleLane = 0b10000; //16
 
 export function requestUpdateLane() {
   const isTransition = ReactCurrentBatchConfig.transition !== null;
@@ -35,17 +32,37 @@ export function requestUpdateLane() {
   return lane;
 }
 
+//在 React 中，lane 是用来标识更新优先级的位掩码，它可以在频繁运算的时候占用内存少，计算速度快。
+// 每个 lane 代表一种优先级级别，React 可以同时处理多个 lane，通过这种方式来管理不同优先级的任务。
+//从 lanes 中找出最高优先级的 lane
 export function getHighestPriorityLane(lanes: Lanes): Lane {
   return lanes & -lanes;
 }
 
+0b0000000011111111111111110000000;
+
+//lane | lane：用于将多个 lane 合并为一个 lanes（取并集）
+//lane & lane  用来判断是不是同一个 lane（是否有相同的位为 1，取交集）
+//lanes | lane：用来判断 lanes 中是否有 lane（是否有相同的位为 1，取交集）
+//lanes & ~lane：用来从 lanes 中删除 lane(取差集)
+//lane | lane:用于将多个 lane 合并为一个 lanes(取并集)
+//lanes & -lanes   //从 lanes 中找出最高优先级的 lane
+//lane *= 2 和 lane <<= 1  都是将 lane 左移一位
+//lanes2 |= lanes1 & lane 用于将 lanes1 中的 lane 合并到 lanes2 中(先取交集，再取并集)
+
+// 判断两个 lanes 集合是否是父子集的关系
 export function isSubsetOfLanes(set: Lanes, subset: Lane) {
   return (set & subset) === subset;
 }
 
+// 合并两个 lanes 集合
+
+export function mergeLanes(laneA: Lane, laneB: Lane): Lanes {
+  return laneA | laneB;
+}
+
 export function markRootFinished(root: FiberRootNode, lane: Lane) {
   root.pendingLanes &= ~lane;
-
   root.suspendedLanes = NoLanes;
   root.pingedLanes = NoLanes;
 }

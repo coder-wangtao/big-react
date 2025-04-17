@@ -1,6 +1,5 @@
 import ReactDOM from "react-dom";
-import React, { useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 function App2() {
   const [num, updateNum] = useState(0);
 
@@ -171,7 +170,7 @@ function App() {
   }
   return (
     <div>
-      <h1 onClick={handle_click}>点我新增111</h1>
+      <h1 onClick={handle_click}>点我新增1{count}</h1>
       <Bpp />
     </div>
   );

@@ -37,6 +37,10 @@ export function updateContainer(
       lane,
     );
     scheduleUpdateOnFiber(hostRootFiber, lane);
+
+    setTimeout(() => {
+      console.log(hostRootFiber);
+    }, 1000);
   });
   return element;
 }

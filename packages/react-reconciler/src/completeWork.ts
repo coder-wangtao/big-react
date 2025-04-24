@@ -43,7 +43,7 @@ export const completeWork = (wip: FiberNode) => {
         // 1. props是否变化 {onClick: xx} {onClick: xxx}
         // 2. 变了 Update flag
         // className style
-        markUpdate(wip);
+        // markUpdate(wip);
         // 标记Ref
         if (current.ref !== wip.ref) {
           markRef(wip);

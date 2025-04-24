@@ -100,6 +100,7 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
 export function ensureRootIsScheduled(root: FiberRootNode) {
   const updateLane = getNextLane(root);
   const existingCallback = root.callbackNode;
+
   if (updateLane === NoLane) {
     if (existingCallback !== null) {
       unstable_cancelCallback(existingCallback);
@@ -134,7 +135,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
     scheduleSyncCallback(performSyncWorkOnRoot.bind(null, root));
     scheduleMicroTask(flushSyncCallbacks);
   } else {
-    // 其他优先级 用宏任务调度
+    // 其他优先级(宏任务)用宏任务调度
     const schedulerPriority = lanesToSchedulerPriority(updateLane);
 
     newCallbackNode = scheduleCallback(
@@ -327,6 +328,7 @@ function commitRoot(root: FiberRootNode) {
   markRootFinished(root, lane);
 
   if (
+    //PassiveMask代表有useEffect副作用回调
     (finishedWork.flags & PassiveMask) !== NoFlags ||
     (finishedWork.subtreeFlags & PassiveMask) !== NoFlags
   ) {
@@ -351,10 +353,10 @@ function commitRoot(root: FiberRootNode) {
   if (subtreeHasEffect || rootHasEffect) {
     // beforeMutation
     // mutation Placement
+    //修改真实dom
     commitMutationEffects(finishedWork, root);
 
     root.current = finishedWork;
-
     // 阶段3/3:Layout
     commitLayoutEffects(finishedWork, root);
   } else {

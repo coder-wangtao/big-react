@@ -126,7 +126,6 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     let lastNewFiber: FiberNode | null = null;
     // 创建的第一个fiber
     let firstNewFiber: FiberNode | null = null;
-
     // 1.将current保存在map中
     const existingChildren: ExistingChildren = new Map();
     let current = currentFirstChild;
@@ -204,6 +203,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     element: any,
   ): FiberNode | null {
     const keyToUse = getElementKeyToUse(element, index);
+    //获取老得fiberNode
     const before = existingChildren.get(keyToUse);
 
     // HostText

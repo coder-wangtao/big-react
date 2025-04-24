@@ -45,7 +45,7 @@ export function markWipReceivedUpdate() {
   didReceiveUpdate = true;
 }
 
-// 递归中的递阶段
+//
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   // bailout策略
   didReceiveUpdate = false;
@@ -65,6 +65,7 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
         current,
         renderLane,
       );
+
       if (!hasScheduledStateOrContext) {
         // 四要素～ state context
         // 命中bailout
@@ -85,7 +86,6 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   }
 
   wip.lanes = NoLanes;
-
   // 比较，返回子fiberNode
   switch (wip.tag) {
     case HostRoot:
@@ -223,11 +223,11 @@ function updateFunctionComponent(
   // render
   const nextChildren = renderWithHooks(wip, Component, renderLane);
   const current = wip.alternate;
-  if (current !== null && !didReceiveUpdate) {
-    bailoutHook(wip, renderLane);
-    return bailoutOnAlreadyFinishedWork(wip, renderLane);
-  }
-
+  // if (current !== null && !didReceiveUpdate) {
+  //   bailoutHook(wip, renderLane);
+  //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
+  // }
+  // debugger;
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }
@@ -252,9 +252,9 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
   }
 
   const nextChildren = wip.memoizedState;
-  if (prevChildren === nextChildren) {
-    return bailoutOnAlreadyFinishedWork(wip, renderLane);
-  }
+  // if (prevChildren === nextChildren) {
+  //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
+  // }
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }

@@ -39,11 +39,11 @@ function App2() {
   );
 }
 
-function App1() {
-  const [arr, setArr] = useState(["one", "two", "three"]);
+function App() {
+  const [arr, setArr] = useState(["a", "b", "c"]);
 
   function handleClick() {
-    setArr(["three", "two", "one"]);
+    setArr(["c", "b", "a"]);
   }
 
   return (
@@ -157,7 +157,7 @@ function Bpp() {
   return <h1>Bpp</h1>;
 }
 
-function App() {
+function App1() {
   const [count, setCount] = useState(0);
 
   useEffect(effect1);
@@ -176,4 +176,4 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App4 />);

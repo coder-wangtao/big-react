@@ -35,7 +35,7 @@ import {
 import { HookHasEffect, Passive } from "./hookEffectTags";
 import { useEffect } from "react";
 
-let workInProgress: FiberNode | null = null;
+let workInProgress: FiberNode | null = null; //当前正在工作中的
 let wipRootRenderLane: Lane = NoLane;
 let rootDoesHasPassiveEffects = false;
 
@@ -51,6 +51,7 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
   wipRootRenderLane = lane;
 }
 
+//初次渲染和更新都是执行这个函数
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
   // fiberRootNode
   const root = markUpdateFromFiberToRoot(fiber);

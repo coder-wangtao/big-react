@@ -6,6 +6,7 @@ export interface Dispatcher {
   useTransition: () => [boolean, (callback: () => void) => void];
   useRef: <T>(initialValue: T) => { current: T };
   useContext: <T>(context: ReactContext<T>) => T;
+  useReducer: (reducer: () => void | void, initialState: any) => void;
 }
 
 export type Dispatch<State> = (action: Action<State>) => void;

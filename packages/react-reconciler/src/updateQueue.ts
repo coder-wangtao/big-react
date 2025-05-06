@@ -39,7 +39,7 @@ export const enqueueUpdate = <State>(
   updateQueue: UpdateQueue<State>,
   update: Update<State>,
 ) => {
-  const pending = updateQueue.shared.pending;
+  const pending = updateQueue.shared?.pending;
   if (pending === null) {
     // pending = a -> a
     update.next = update;

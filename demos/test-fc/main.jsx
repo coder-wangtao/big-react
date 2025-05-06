@@ -1,6 +1,6 @@
 import ReactDOM from "react-dom";
-import React, { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect, useReducer } from "react";
+import { Component } from "../../packages/react-reconciler/src/Component";
 function App2() {
   const [num, updateNum] = useState(0);
 
@@ -177,4 +177,69 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+function FragmentComponent() {
+  return (
+    <ul>
+      <>
+        <li>1</li>
+        <li>2</li>
+      </>
+    </ul>
+  );
+}
+
+class ClassComponent extends Component {
+  state = { count: 0 };
+  render() {
+    return (
+      <div className="class border">
+        {this.props.name}
+        <button
+          onClick={() => {
+            this.setState({ count: this.state.count + 1 });
+            // this.setState({ count: this.state.count + 2 });
+          }}
+        >
+          {this.state.count}
+        </button>
+      </div>
+    );
+  }
+}
+
+function FunctionComponent(props) {
+  const [state1, setState1] = useState(1);
+  function reducer(state, action) {
+    switch (action.type) {
+      case "increment":
+        return { count: state.count + 1 };
+      case "decrement":
+        return { count: state.count - 1 };
+      default:
+        throw new Error();
+    }
+  }
+  const [state, dispatch] = useReducer(reducer, { count: 2 });
+
+  return (
+    <div>
+      <p>Count: {state.count}</p>
+      <button onClick={() => dispatch({ type: "increment" })}>Increment</button>
+      <button onClick={() => dispatch({ type: "decrement" })}>Decrement</button>
+    </div>
+  );
+}
+
+function Test() {
+  return (
+    <div className="box border">
+      <h1 className="border">omg</h1>
+      <h2 className="border">ooo</h2>
+      <FunctionComponent name="函数组件" />
+      <ClassComponent name="class组件" />
+      <FragmentComponent />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<Test />);

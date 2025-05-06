@@ -43,6 +43,7 @@ let curCallback: CallbackNode | null = null;
       "NormalPriority",
       "LowPriority",
     ][priority];
+
     btn.onclick = () => {
       workList.unshift({
         count: 100,
@@ -59,7 +60,7 @@ function schedule() {
   //当前的任务，把最高优先级的挑选出来
   const curWork = workList.sort((w1, w2) => w1.priority - w2.priority)[0];
 
-  // 策略逻辑
+  // 执行完了return掉
   if (!curWork) {
     curCallback = null;
     cbNode && cancelCallback(cbNode);
@@ -67,7 +68,9 @@ function schedule() {
   }
 
   const { priority: curPriority } = curWork;
+
   if (curPriority === prevPriority) {
+    //如果当前任务和之前任务的优先级一样，不会再开启一个scheduleCallback（宏任务）
     return;
   }
   // 更高优先级的work
@@ -86,9 +89,11 @@ function perform(work: Work, didTimeout?: boolean) {
 
   //shouldYield代表当前浏览器还有没有空闲时间
   //shouldYield()会在while过程中，不断地去计算，此时我们还有没有剩余时间
-  //一轮事件循环，留给任务的处理的时间，大概是7 8ms 
+  //一轮事件循环，留给任务的处理的时间，大概是7 8ms
   const needSync = work.priority === ImmediatePriority || didTimeout;
+  // console.log(shouldYieldToHost(), needSync);
   while ((needSync || !shouldYield()) && work.count) {
+    //可以理解為没处理一个fiber节点，就会判断shouldYieldToHost有没有超时
     work.count--;
     insertSpan(work.priority + "");
   }
@@ -116,7 +121,7 @@ function insertSpan(content) {
   const span = document.createElement("span");
   span.innerText = content;
   span.className = `pri-${content}`;
-  doSomeBuzyWork(10000000);
+  doSomeBuzyWork(1000000000);
   root?.appendChild(span);
 }
 

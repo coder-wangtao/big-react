@@ -1,5 +1,6 @@
 import { Props, Key, Ref, ReactElementType } from "shared/ReactTypes";
 import {
+  ClassComponent,
   ContextProvider,
   Fragment,
   FunctionComponent,
@@ -39,6 +40,9 @@ export class FiberNode {
     this.tag = tag;
     this.key = key || null;
     // HostComponent <div> div DOM
+    //原生标签 -> dom节点
+    //class  -> 实例
+    //function -> null
     this.stateNode = null;
     // FunctionComponent () => {}
     this.type = null;
@@ -47,19 +51,23 @@ export class FiberNode {
     this.return = null;
     this.sibling = null;
     this.child = null;
+
+    //记录节点在当前层级下的位置
     this.index = 0;
 
     this.ref = null;
 
     // 作为工作单元
-    this.pendingProps = pendingProps;
-    this.memoizedProps = null;
+    this.pendingProps = pendingProps; //当前的props
+    this.memoizedProps = null; //更新后的props
     this.memoizedState = null;
     this.updateQueue = null;
 
     this.alternate = null;
+
     // 副作用
     this.flags = NoFlags;
+
     this.subtreeFlags = NoFlags;
     this.deletions = null;
   }
@@ -141,6 +149,10 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
     type.$$typeof === REACT_PROVIDER_TYPE
   ) {
     fiberTag = ContextProvider;
+  } else if (typeof type === "function") {
+    fiberTag = type.prototype.isReactComponent
+      ? ClassComponent
+      : FunctionComponent;
   } else if (typeof type !== "function" && __DEV__) {
     console.warn("为定义的type类型", element);
   }

@@ -4,9 +4,11 @@ export type WorkTag =
   | typeof HostComponent
   | typeof HostText
   | typeof Fragment
-  | typeof ContextProvider;
+  | typeof ContextProvider
+  | typeof ClassComponent;
 
 export const FunctionComponent = 0;
+export const ClassComponent = 2;
 export const HostRoot = 3;
 
 export const HostComponent = 5;

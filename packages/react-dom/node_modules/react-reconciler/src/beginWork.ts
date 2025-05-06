@@ -5,6 +5,7 @@ import { renderWithHooks } from "./fiberHooks";
 import { Lane } from "./fiberLanes";
 import { processUpdateQueue, UpdateQueue } from "./updateQueue";
 import {
+  ClassComponent,
   ContextProvider,
   Fragment,
   FunctionComponent,
@@ -23,6 +24,8 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
       return updateHostRoot(wip, renderLane);
     case HostComponent:
       return updateHostComponent(wip);
+    case ClassComponent:
+      return updateClassComponent(wip, renderLane);
     case HostText:
       return null;
     case FunctionComponent:
@@ -60,6 +63,14 @@ function updateFragment(wip: FiberNode) {
 
 function updateFunctionComponent(wip: FiberNode, renderLane: Lane) {
   const nextChildren = renderWithHooks(wip, renderLane);
+  reconcileChildren(wip, nextChildren);
+  return wip.child;
+}
+
+function updateClassComponent(wip: FiberNode, renderLane: Lane) {
+  const { type, pendingProps } = wip;
+  const instance = new type(pendingProps);
+  const nextChildren = instance.render();
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }

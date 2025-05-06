@@ -29,6 +29,8 @@ interface Hook {
   next: Hook | null;
   baseState: any;
   baseQueue: Update<any> | null;
+  reducer: any;
+  queue: any;
 }
 
 export interface Effect {
@@ -84,6 +86,9 @@ const HooksDispatcherOnMount: Dispatcher = {
   useTransition: mountTransition,
   useRef: mountRef,
   useContext: readContext,
+  useReducer: (...prams) => {
+    return mountReducer(...prams);
+  },
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
@@ -92,6 +97,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useTransition: updateTransition,
   useRef: updateRef,
   useContext: readContext,
+  useReducer: updateReducer,
 };
 
 function mountEffect(create: EffectCallback | void, deps: EffectDeps | void) {
@@ -270,6 +276,8 @@ function updateWorkInProgressHook(): Hook {
     next: null,
     baseQueue: currentHook.baseQueue,
     baseState: currentHook.baseState,
+    reducer: currentHook.reducer,
+    queue: currentHook.queue,
   };
   if (workInProgressHook === null) {
     // mount时 第一个hook
@@ -304,9 +312,54 @@ function mountState<State>(
   hook.baseState = memoizedState;
 
   // @ts-ignore
-  const dispatch = dispatchSetState.bind(null, currentlyRenderingFiber, queue);
+  const dispatch = dispatchSetState.bind(
+    null,
+    currentlyRenderingFiber as any,
+    hook,
+    queue,
+  );
   queue.dispatch = dispatch;
   return [memoizedState, dispatch];
+}
+
+function mountReducer(reducer: any, initialState: any) {
+  // 创建Hook对象，构建Hook链表
+  const hook = mountWorkInProgressHook();
+  const queue = createUpdateQueue<any>();
+  hook.updateQueue = queue;
+  hook.memoizedState = initialState;
+  hook.baseState = initialState;
+  // 记录更新state方法
+  hook.reducer = reducer;
+  // 获取触发更新渲染方法
+  const dispatch = dispatchSetState.bind(
+    null,
+    currentlyRenderingFiber as any,
+    hook,
+    queue,
+  );
+  return [hook.memoizedState, dispatch];
+}
+
+function updateReducer() {
+  // 创建Hook对象，复制旧Hook对象属性值，构建Hook链表
+  const hook = updateWorkInProgressHook();
+  // 执行更新state方法逻辑，获取新的state值
+  // hook.queue.push((state: any) => reducer(state, action));
+  hook.memoizedState = hook.queue.reduce(
+    (state: any, action: any) => action(state),
+    hook.memoizedState,
+  );
+  // 清空队列，重新收集更新state方法
+  hook.queue = [];
+  // 获取触发更新渲染方法
+  const dispatch = dispatchSetState.bind(
+    null,
+    currentlyRenderingFiber as any,
+    hook,
+    hook.updateQueue,
+  );
+  return [hook.memoizedState, dispatch];
 }
 
 function mountTransition(): [boolean, (callback: () => void) => void] {
@@ -349,9 +402,12 @@ function startTransition(setPending: Dispatch<boolean>, callback: () => void) {
 
 function dispatchSetState<State>(
   fiber: FiberNode,
+  hook: Hook,
   updateQueue: UpdateQueue<State>,
   action: Action<State>,
 ) {
+  const reducer = hook.reducer;
+  hook.queue.push((state: any) => reducer(state, action));
   const lane = requestUpdateLane();
   const update = createUpdate(action, lane);
   enqueueUpdate(updateQueue, update);
@@ -365,6 +421,8 @@ function mountWorkInProgressHook(): Hook {
     next: null,
     baseQueue: null,
     baseState: null,
+    reducer: null,
+    queue: [],
   };
   if (workInProgressHook === null) {
     // mount时 第一个hook

@@ -91,6 +91,10 @@ const commitMutationEffectsOnFiber = (
   if ((flags & Ref) !== NoFlags && tag === HostComponent) {
     safelyDetachRef(finishedWork);
   }
+
+  //TODO:uselayoutEffect
+  // 同步调用 layoutEffect 的 create 函数
+  // 同步调用 layoutEffect 的 destroy 函数
 };
 
 function safelyDetachRef(current: FiberNode) {

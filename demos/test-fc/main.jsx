@@ -231,15 +231,58 @@ function FunctionComponent(props) {
 }
 
 function Test() {
+  const [state, setState] = useState(1);
+
   return (
     <div className="box border">
       <h1 className="border">omg</h1>
       <h2 className="border">ooo</h2>
-      <FunctionComponent name="函数组件" />
+      <button
+        onClick={() => {
+          setState(2);
+        }}
+      >
+        Increment
+      </button>
+      {/* <FunctionComponent name="函数组件" />
       <ClassComponent name="class组件" />
-      <FragmentComponent />
+      <FragmentComponent /> */}
+      {state == 1 ? <TestDelete /> : 1}
     </div>
   );
 }
+
+const TestDelete = () => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    console.log("count---------------", count);
+    return () => console.log("Child unmount");
+  }, [count]);
+
+  return (
+    <>
+      <button onClick={() => setCount((c) => c + 1)}>{count}</button>;
+      {count % 2 ? <div>omg</div> : <span>123</span>}
+      <button
+        onClick={() => {
+          if (count === 0) {
+            setCount(4);
+          } else {
+            setCount(count - 2);
+          }
+        }}
+      >
+        {count}
+      </button>
+      ;
+      <ul>
+        {[0, 1, 2, 3, 4].map((item) => {
+          return count >= item ? <li key={item}>{item}</li> : null;
+        })}
+      </ul>
+    </>
+  );
+};
 
 ReactDOM.createRoot(document.getElementById("root")).render(<Test />);

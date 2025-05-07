@@ -150,7 +150,7 @@ export function createFiberFromElement(element: ReactElementType): FiberNode {
   ) {
     fiberTag = ContextProvider;
   } else if (typeof type === "function") {
-    fiberTag = type.prototype.isReactComponent
+    fiberTag = type?.prototype?.isReactComponent
       ? ClassComponent
       : FunctionComponent;
   } else if (typeof type !== "function" && __DEV__) {

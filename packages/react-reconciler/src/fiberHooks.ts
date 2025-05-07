@@ -6,7 +6,7 @@ import { Action, ReactContext } from "shared/ReactTypes";
 import { FiberNode } from "./fiber";
 import { Flags, PassiveEffect } from "./fiberFlags";
 import { Lane, NoLane, requestUpdateLane } from "./fiberLanes";
-import { HookHasEffect, Passive } from "./hookEffectTags";
+import { HookHasEffect, HookLayout, Passive } from "./hookEffectTags";
 import {
   createUpdate,
   createUpdateQueue,
@@ -89,6 +89,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   useReducer: (...prams) => {
     return mountReducer(...prams);
   },
+  useLayoutEffect: mountLayoutEffect,
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
@@ -98,13 +99,16 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useRef: updateRef,
   useContext: readContext,
   useReducer: updateReducer,
+  useLayoutEffect: updateLayoutEffect,
 };
 
 function mountEffect(create: EffectCallback | void, deps: EffectDeps | void) {
+  //创建 useEffect 的 Hook 对象，构建 fiber.memoizedState 也就是 Hook 链表
   const hook = mountWorkInProgressHook();
   const nextDeps = deps === undefined ? null : deps;
   (currentlyRenderingFiber as FiberNode).flags |= PassiveEffect;
 
+  //创建 effect 对象 ，赋值给 hook.memoizedState,构建 fiber.updateQueue队列，队列当中就是一个一个的 effect 对象。
   hook.memoizedState = pushEffect(
     Passive | HookHasEffect,
     create,
@@ -188,6 +192,53 @@ function pushEffect(
     }
   }
   return effect;
+}
+
+function mountLayoutEffect(
+  create: EffectCallback | void,
+  deps: EffectDeps | void,
+) {
+  const hook = mountWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  (currentlyRenderingFiber as FiberNode).flags |= PassiveEffect;
+
+  hook.memoizedState = pushEffect(
+    Passive | HookHasEffect,
+    create,
+    undefined,
+    nextDeps,
+  );
+}
+
+function updateLayoutEffect(
+  create: EffectCallback | void,
+  deps: EffectDeps | void,
+) {
+  const hook = updateWorkInProgressHook();
+  const nextDeps = deps === undefined ? null : deps;
+  let destroy: EffectCallback | void;
+
+  if (currentHook !== null) {
+    const prevEffect = currentHook.memoizedState as Effect;
+    destroy = prevEffect.destroy;
+
+    if (nextDeps !== null) {
+      // 浅比较依赖
+      const prevDeps = prevEffect.deps;
+      if (areHookInputsEqual(nextDeps, prevDeps)) {
+        hook.memoizedState = pushEffect(Passive, create, destroy, nextDeps);
+        return;
+      }
+    }
+    // 浅比较 不相等
+    (currentlyRenderingFiber as FiberNode).flags |= PassiveEffect;
+    hook.memoizedState = pushEffect(
+      Passive | HookHasEffect,
+      create,
+      destroy,
+      nextDeps,
+    );
+  }
 }
 
 function createFCUpdateQueue<State>() {

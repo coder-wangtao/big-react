@@ -7,6 +7,7 @@ export interface Dispatcher {
   useRef: <T>(initialValue: T) => { current: T };
   useContext: <T>(context: ReactContext<T>) => T;
   useReducer: (reducer: () => void | void, initialState: any) => void;
+  useLayoutEffect: (callback: () => void | void, deps: any[] | void) => void;
 }
 
 export type Dispatch<State> = (action: Action<State>) => void;

@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, memo } from "react";
-import React from "react";
+import ReactDOM from "react-dom/client";
 
 const ctx = createContext(0);
 
@@ -10,7 +10,7 @@ export default function App() {
     <ctx.Provider value={num}>
       <div
         onClick={() => {
-          update(1);
+          update((n) => n + 1);
         }}
       >
         <Cpn />
@@ -34,3 +34,5 @@ function Child() {
 
   return <div>ctx: {val}</div>;
 }
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

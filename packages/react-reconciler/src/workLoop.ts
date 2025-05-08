@@ -102,6 +102,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
   const existingCallback = root.callbackNode;
 
   if (updateLane === NoLane) {
+    //没有lane 代表没有update 代表没有更新
     if (existingCallback !== null) {
       unstable_cancelCallback(existingCallback);
     }
@@ -136,6 +137,7 @@ export function ensureRootIsScheduled(root: FiberRootNode) {
     scheduleMicroTask(flushSyncCallbacks);
   } else {
     // 其他优先级(宏任务)用宏任务调度
+    //调度器调度
     const schedulerPriority = lanesToSchedulerPriority(updateLane);
 
     newCallbackNode = scheduleCallback(

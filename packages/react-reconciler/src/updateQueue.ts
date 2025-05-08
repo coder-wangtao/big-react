@@ -48,6 +48,7 @@ export const enqueueUpdate = <State>(
   fiber: FiberNode,
   lane: Lane,
 ) => {
+  //update 是一个环状链表结构
   const pending = updateQueue.shared.pending;
   if (pending === null) {
     // pending = a -> a
@@ -58,7 +59,7 @@ export const enqueueUpdate = <State>(
     update.next = pending.next;
     pending.next = update;
   }
-  updateQueue.shared.pending = update;
+  updateQueue.shared.pending = update; //最后一个
 
   fiber.lanes = mergeLanes(fiber.lanes, lane);
   const alternate = fiber.alternate;
@@ -96,6 +97,8 @@ export const processUpdateQueue = <State>(
     baseQueue: null,
   };
 
+  //pending c->a->b->c
+  //计算新的状态（批处理的时候会遍历所有的update(update是一个环状链表结构)）
   if (pendingUpdate !== null) {
     // 第一个update
     const first = pendingUpdate.next;

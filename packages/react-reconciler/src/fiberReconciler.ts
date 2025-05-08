@@ -26,9 +26,10 @@ export function updateContainer(
   element: ReactElementType | null,
   root: FiberRootNode,
 ) {
+  //默认是同步更新
   unstable_runWithPriority(unstable_ImmediatePriority, () => {
     const hostRootFiber = root.current;
-    const lane = requestUpdateLane();
+    const lane = requestUpdateLane(); //同步优先级（首屏渲染）
     const update = createUpdate<ReactElementType | null>(element, lane);
     enqueueUpdate(
       hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,

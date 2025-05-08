@@ -397,6 +397,8 @@ function dispatchSetState<State>(
   updateQueue: FCUpdateQueue<State>,
   action: Action<State>,
 ) {
+  //譬如：setState在一个onclick事件触发，或者是在useEffect回调触发的,根据触发的不同，返回不同的优先级
+  //并发更新的基础
   const lane = requestUpdateLane();
   const update = createUpdate(action, lane);
 

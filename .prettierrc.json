@@ -18,5 +18,8 @@
   "endOfLine": "lf",
   "embeddedLanguageFormatting": "auto",
   "singleAttributePerLine": false,
-  "plugins": []
+  "plugins": [],
+   "disableLanguages": [
+    "md"
+  ]
 }

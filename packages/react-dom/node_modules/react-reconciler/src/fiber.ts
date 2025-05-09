@@ -44,6 +44,8 @@ export class FiberNode {
   memoizedProps: Props | null;
   memoizedState: any;
   alternate: FiberNode | null;
+
+  //副作用
   flags: Flags;
   subtreeFlags: Flags;
   updateQueue: unknown;
@@ -72,8 +74,8 @@ export class FiberNode {
     this.ref = null;
 
     // 作为工作单元
-    this.pendingProps = pendingProps;
-    this.memoizedProps = null;
+    this.pendingProps = pendingProps; //开始工作前的props
+    this.memoizedProps = null; //工作完成后确定下来的props
     this.memoizedState = null;
     this.updateQueue = null;
 
@@ -102,8 +104,8 @@ export class FiberRootNode {
   pendingLanes: Lanes; // 所有未被消费的lane的集合
   suspendedLanes: Lanes; //
   pingedLanes: Lanes;
-  finishedLane: Lane;  //代表本本次更新消费的lane
-  pendingPassiveEffects: PendingPassiveEffects;
+  finishedLane: Lane; //代表本本次更新消费的lane
+  pendingPassiveEffects: PendingPassiveEffects; //收集effect回调的容器
 
   callbackNode: CallbackNode | null;
   callbackPriority: Lane;

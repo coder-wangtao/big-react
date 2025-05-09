@@ -176,4 +176,17 @@ function App1() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App4 />);
+const A = () => {
+  return (
+    <div>
+      <B />
+      <B />
+    </div>
+  );
+};
+
+const B = () => {
+  return <div>1</div>;
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<A />);

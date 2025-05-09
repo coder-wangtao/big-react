@@ -241,7 +241,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
   const prevChildren = wip.memoizedState;
 
   const { memoizedState } = processUpdateQueue(baseState, pending, renderLane);
-  wip.memoizedState = memoizedState;
+  wip.memoizedState = memoizedState; //其实就是reactElement
 
   const current = wip.alternate;
   // 考虑RootDidNotComplete的情况，需要复用memoizedState
@@ -251,7 +251,7 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
     }
   }
 
-  const nextChildren = wip.memoizedState;
+  const nextChildren = wip.memoizedState; //子对应的reactElement
   // if (prevChildren === nextChildren) {
   //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
   // }
@@ -270,6 +270,11 @@ function updateHostComponent(wip: FiberNode) {
 function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
   const current = wip.alternate;
 
+  //在第一次挂载刚开始的时候
+  //即使是首屏渲染，hostRootFiber <- -> hostRootFiber wip
+
+  //对于首屏渲染组件树上所有所有元素都会走mount逻辑，
+  //对于hostRootFiber都会走update逻辑，这时会插入一个Placement Flag，通过这一个Placement Flag，会执行一次dom插入操作
   if (current !== null) {
     // update
     wip.child = reconcileChildFibers(wip, current?.child, children);

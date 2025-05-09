@@ -14,6 +14,7 @@ export interface Dispatcher {
 
 export type Dispatch<State> = (action: Action<State>) => void;
 
+//当前使用hooks的集合
 const currentDispatcher: { current: Dispatcher | null } = {
   current: null,
 };

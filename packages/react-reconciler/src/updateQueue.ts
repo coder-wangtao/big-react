@@ -4,7 +4,7 @@ import { isSubsetOfLanes, Lane, mergeLanes, NoLane } from "./fiberLanes";
 import { FiberNode } from "./fiber";
 
 export interface Update<State> {
-  action: Action<State>;
+  action: Action<State>; //setState(1) setState((num) => num+1)
   lane: Lane;
   next: Update<any> | null;
   hasEagerState: boolean;
@@ -81,6 +81,7 @@ export function basicStateReducer<State>(
   }
 }
 
+//消費update
 export const processUpdateQueue = <State>(
   baseState: State,
   pendingUpdate: Update<State> | null,

@@ -30,13 +30,15 @@ export function updateContainer(
   unstable_runWithPriority(unstable_ImmediatePriority, () => {
     const hostRootFiber = root.current;
     const lane = requestUpdateLane(); //同步优先级（首屏渲染）
-    const update = createUpdate<ReactElementType | null>(element, lane);
+    //首屏渲染 所需要的更新
+    const update = createUpdate<ReactElementType | null>(element, lane); //element是首屏渲染的jsx
     enqueueUpdate(
       hostRootFiber.updateQueue as UpdateQueue<ReactElementType | null>,
       update,
       hostRootFiber,
       lane,
     );
+
     scheduleUpdateOnFiber(hostRootFiber, lane);
   });
   return element;

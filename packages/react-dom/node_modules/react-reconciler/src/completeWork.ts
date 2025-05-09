@@ -119,6 +119,9 @@ export const completeWork = (wip: FiberNode) => {
   }
 };
 
+//B = <div></div>
+//<div><B/></div>
+
 function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
   let node = wip.child;
 

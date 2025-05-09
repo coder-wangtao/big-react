@@ -89,6 +89,8 @@ function prepareFreshStack(root: FiberRootNode, lane: Lane) {
 
 export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
   // fiberRootNode
+  //首屏渲染 穿进来的fiber是hostRootFiber
+  //对于其他流程传入的fiber是当前更新的fiber,需要向上找到fiberRootNode
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
 
   markRootUpdated(root, lane);
@@ -353,8 +355,9 @@ function commitRoot(root: FiberRootNode) {
     (finishedWork.flags & (MutationMask | PassiveMask)) !== NoFlags;
 
   if (subtreeHasEffect || rootHasEffect) {
-    // beforeMutation
-    // mutation Placement
+    // 阶段1/3：beforeMutation
+
+    // 阶段2/3： mutation Placement
     //修改真实dom
     commitMutationEffects(finishedWork, root);
 

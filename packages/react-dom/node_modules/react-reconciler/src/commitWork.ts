@@ -92,6 +92,8 @@ const commitMutationEffectsOnFiber = (
     }
     finishedWork.flags &= ~ChildDeletion;
   }
+
+  //收集effect回调
   if ((flags & PassiveEffect) !== NoFlags) {
     // 收集回调
     commitPassiveEffect(finishedWork, root, "update");
@@ -517,6 +519,7 @@ function insertOrAppendPlacementNodeIntoContainer(
 
     return;
   }
+
   const child = finishedWork.child;
   if (child !== null) {
     insertOrAppendPlacementNodeIntoContainer(child, hostParent);

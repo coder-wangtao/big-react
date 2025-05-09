@@ -37,6 +37,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       childToDelete = childToDelete.sibling;
     }
   }
+
   function reconcileSingleElement(
     returnFiber: FiberNode,
     currentFiber: FiberNode | null,

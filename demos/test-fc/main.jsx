@@ -285,4 +285,24 @@ const TestDelete = () => {
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")).render(<Test />);
+const A = () => {
+  const [num, setNum] = useState(false);
+  window.setNum = setNum;
+  return num ? (
+    <C />
+  ) : (
+    <span
+      onClick={() => {
+        setNum(true);
+      }}
+    >
+      false
+    </span>
+  );
+};
+
+const C = () => {
+  return <span>true</span>;
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<A />);

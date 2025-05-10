@@ -52,6 +52,7 @@ export const enqueueUpdate = <State>(
   updateQueue.shared.pending = update;
 };
 
+//Update是一个环状链表
 export const processUpdateQueue = <State>(
   baseState: State,
   pendingUpdate: Update<State> | null,

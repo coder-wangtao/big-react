@@ -17,7 +17,10 @@ import { Ref } from "./fiberFlags";
 import { pushProvider } from "./fiberContext";
 
 // 递归中的递阶段
-export const beginWork = (wip: FiberNode, renderLane: Lane) => {
+export const beginWork = (
+  wip: FiberdeleteRemainingChildrenNode,
+  renderLane: Lane,
+) => {
   // 比较，返回子fiberNode
   switch (wip.tag) {
     case HostRoot:

@@ -172,7 +172,6 @@ function performConcurrentWorkOnRoot(
 
 function performSyncWorkOnRoot(root: FiberRootNode) {
   const nextLane = getHighestPriorityLane(root.pendingLanes);
-
   if (nextLane !== SyncLane) {
     // 其他比SyncLane低的优先级
     // NoLane
@@ -273,6 +272,7 @@ function commitRoot(root: FiberRootNode) {
   const rootHasEffect =
     (finishedWork.flags & (MutationMask | PassiveMask)) !== NoFlags;
 
+  debugger;
   if (subtreeHasEffect || rootHasEffect) {
     // beforeMutation
     // mutation Placement

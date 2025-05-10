@@ -50,6 +50,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         // key相同
         if (element.$$typeof === REACT_ELEMENT_TYPE) {
           if (currentFiber.type === element.type) {
+            //type相同
             let props = element.props;
             if (element.type === REACT_FRAGMENT_TYPE) {
               props = element.props.children;
@@ -63,6 +64,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
           }
 
           // key相同，type不同 删掉所有旧的
+          //TODO:
           deleteRemainingChildren(returnFiber, currentFiber);
           break;
         } else {
@@ -77,7 +79,8 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         currentFiber = currentFiber.sibling;
       }
     }
-    // 根据element创建fiber
+
+    // 根据element创建fiber(创建新的)
     let fiber;
     if (element.type === REACT_FRAGMENT_TYPE) {
       fiber = createFiberFromFragment(element.props.children, key);
@@ -87,6 +90,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
     fiber.return = returnFiber;
     return fiber;
   }
+
   function reconcileSingleTextNode(
     returnFiber: FiberNode,
     currentFiber: FiberNode | null,
@@ -101,9 +105,11 @@ function ChildReconciler(shouldTrackEffects: boolean) {
         deleteRemainingChildren(returnFiber, currentFiber.sibling);
         return existing;
       }
+      //删除
       deleteChild(returnFiber, currentFiber);
       currentFiber = currentFiber.sibling;
     }
+    //创建
     const fiber = new FiberNode(HostText, { content }, null);
     fiber.return = returnFiber;
     return fiber;

@@ -119,8 +119,11 @@ export const completeWork = (wip: FiberNode) => {
   }
 };
 
+//插入的时候
 //B = <div></div>
 //<div><B/></div>
+//深度优先遍历
+//先递后归
 
 function appendAllChildren(parent: Container | Instance, wip: FiberNode) {
   let node = wip.child;

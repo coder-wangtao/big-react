@@ -236,7 +236,7 @@ export const commitLayoutEffects = commitEffects(
  * 实际情况层级可能更深
  * 同时：一个fiber被标记Placement，那他就是不稳定的（他对应的DOM在本次commit阶段会移动），也不能作为hostSibling
  */
-function gethostSibling(fiber: FiberNode) {
+function getostSibling(fiber: FiberNode) {
   let node: FiberNode = fiber;
   findSibling: while (true) {
     while (node.sibling === null) {
@@ -364,13 +364,34 @@ function recordHostChildrenToDelete(
   // 2. 每找到一个 host节点，判断下这个节点是不是 1 找到那个节点的兄弟节点
 }
 
+//对于标记ChildDeletion的子树
+//对于FunctionComponent，需要处理useEffect unmount执行、解绑ref
+//对于HostComponent,需要解绑Ref
+//对于子树的根HostComponent，需要递归移除dom
+//例如下面的：
+// <App>
+//   123
+//   <p></child></p>
+// </App>
+
 function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
   const rootChildrenToDelete: FiberNode[] = [];
 
   // 递归子树
+  // <div>
+  //   <App />
+  //   <p />
+  // </div>;
+  // function App() {
+  //   return <p>123</p>;
+  // }
+  // 譬如如上结构：
+  // 流程是： div -> app -> p -> 123 -> p
+
   commitNestedComponent(childToDelete, (unmountFiber) => {
     switch (unmountFiber.tag) {
       case HostComponent:
+        //需要解绑Ref
         recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
         safelyDetachRef(unmountFiber);
         return;
@@ -378,6 +399,7 @@ function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
         recordHostChildrenToDelete(rootChildrenToDelete, unmountFiber);
         return;
       case FunctionComponent:
+        //需要处理useEffect unmount执行、解绑ref
         commitPassiveEffect(unmountFiber, root, "unmount");
         return;
       default:
@@ -446,6 +468,12 @@ const commitPlacement = (finishedWork: FiberNode) => {
   }
 };
 
+/**
+ * 难点在于目标fiber的hostSibling可能并不是他的同级sibling
+ * 比如： <A/><B/> 其中：function B() {return <div/>} 所以A的hostSibling实际是B的child
+ * 实际情况层级可能更深
+ * 同时：一个fiber被标记Placement，那他就是不稳定的（他对应的DOM在本次commit阶段会移动），也不能作为hostSibling
+ */
 function getHostSibling(fiber: FiberNode) {
   let node: FiberNode = fiber;
 

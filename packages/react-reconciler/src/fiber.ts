@@ -49,7 +49,7 @@ export class FiberNode {
   flags: Flags;
   subtreeFlags: Flags;
   updateQueue: unknown;
-  deletions: FiberNode[] | null;
+  deletions: FiberNode[] | null; //父节点所有需要被删除的子节点
 
   lanes: Lanes;
   childLanes: Lanes;

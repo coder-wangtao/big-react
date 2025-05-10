@@ -28,8 +28,8 @@ import { REACT_CONTEXT_TYPE } from "shared/ReactSymbol";
 import { markWipReceivedUpdate } from "./beginWork";
 import { readContext as readContextOrigin } from "./fiberContext";
 
-let currentlyRenderingFiber: FiberNode | null = null;
-let workInProgressHook: Hook | null = null;
+let currentlyRenderingFiber: FiberNode | null = null; //当前正在render的fiber
+let workInProgressHook: Hook | null = null; //当前正在处理的hook
 let currentHook: Hook | null = null;
 let renderLane: Lane = NoLane;
 
@@ -282,8 +282,15 @@ function updateState<State>(): [State, Dispatch<State>] {
 }
 
 function updateWorkInProgressHook(): Hook {
+  // 找到当前useState对应的hook数据
   // TODO render阶段触发的更新
   let nextCurrentHook: Hook | null;
+
+  //mount useState1 useState2 useState3
+  //update useState1 useState2 useState3 useState4
+  //if(ture){
+  //useState4
+  //}
 
   if (currentHook === null) {
     // 这是这个FC update时的第一个hook
@@ -308,6 +315,7 @@ function updateWorkInProgressHook(): Hook {
   }
 
   currentHook = nextCurrentHook as Hook;
+
   const newHook: Hook = {
     memoizedState: currentHook.memoizedState,
     updateQueue: currentHook.updateQueue,
@@ -342,6 +350,7 @@ function mountState<State>(
   } else {
     memoizedState = initialState;
   }
+  //创建一个Update
   const queue = createFCUpdateQueue<State>();
   hook.updateQueue = queue;
   hook.memoizedState = memoizedState;

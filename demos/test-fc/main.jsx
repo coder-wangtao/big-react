@@ -188,5 +188,23 @@ const A = () => {
 const B = () => {
   return <div>1</div>;
 };
+function App10() {
+  const [num, setNum] = useState(false);
+  return num === true ? (
+    <Child2 />
+  ) : (
+    <span
+      onClick={() => {
+        setNum(false);
+      }}
+    >
+      FALSE
+    </span>
+  );
+}
 
-ReactDOM.createRoot(document.getElementById("root")).render(<A />);
+function Child2() {
+  return <span>TRUE</span>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App10 />);

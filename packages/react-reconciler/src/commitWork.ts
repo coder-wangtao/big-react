@@ -280,7 +280,7 @@ function recordHostChildrenToDelete(
 }
 
 function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
-  debugger;
+  // debugger;
   const rootChildrenToDelete: FiberNode[] = [];
 
   // 递归子树
@@ -307,7 +307,7 @@ function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
   if (rootChildrenToDelete.length) {
     const hostParent = getHostParent(childToDelete);
     if (hostParent !== null) {
-      debugger;
+      // debugger;
       rootChildrenToDelete.forEach((node) => {
         removeChild(node.stateNode, hostParent);
       });

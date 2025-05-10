@@ -272,7 +272,7 @@ function commitRoot(root: FiberRootNode) {
   const rootHasEffect =
     (finishedWork.flags & (MutationMask | PassiveMask)) !== NoFlags;
 
-  debugger;
+  // debugger;
   if (subtreeHasEffect || rootHasEffect) {
     // beforeMutation
     // mutation Placement

@@ -285,19 +285,24 @@ const TestDelete = () => {
   );
 };
 
+const D = () => {
+  return <p>123</p>;
+};
+
 const A = () => {
   const [num, setNum] = useState(false);
   window.setNum = setNum;
   return num ? (
-    <C />
+    <span>false</span>
   ) : (
-    <span
+    <div
       onClick={() => {
         setNum(true);
       }}
     >
-      false
-    </span>
+      <D />
+      <p />
+    </div>
   );
 };
 

@@ -279,8 +279,18 @@ function recordHostChildrenToDelete(
   // 2. 每找到一个 host节点，判断下这个节点是不是 1 找到那个节点的兄弟节点
 }
 
+// 递归子树
+// <div>
+//   <App />
+//   <p />
+// </div>;
+// function App() {
+//   return <p>123</p>;
+// }
+// 譬如如上结构：
+// 流程是： div -> app -> p -> 123 -> p
+
 function commitDeletion(childToDelete: FiberNode, root: FiberRootNode) {
-  // debugger;
   const rootChildrenToDelete: FiberNode[] = [];
 
   // 递归子树

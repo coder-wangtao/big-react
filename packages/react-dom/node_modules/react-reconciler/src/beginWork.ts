@@ -89,13 +89,13 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   // 比较，返回子fiberNode
   switch (wip.tag) {
     case HostRoot:
-      return updateHostRoot(wip, renderLane);
+      return updateHostRoot(wip, renderLane); //首次渲染
     case HostComponent:
       return updateHostComponent(wip);
     case HostText:
       return null;
     case FunctionComponent:
-      return updateFunctionComponent(wip, wip.type, renderLane);
+      return updateFunctionComponent(wip, wip.type, renderLane); //setState
     case Fragment:
       return updateFragment(wip);
     case ContextProvider:

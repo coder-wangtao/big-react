@@ -42,6 +42,7 @@ export const createUpdateQueue = <State>() => {
   } as UpdateQueue<State>;
 };
 
+//环状链表
 export const enqueueUpdate = <State>(
   updateQueue: UpdateQueue<State>,
   update: Update<State>,
@@ -103,6 +104,7 @@ export const processUpdateQueue = <State>(
   if (pendingUpdate !== null) {
     // 第一个update
     const first = pendingUpdate.next;
+
     let pending = pendingUpdate.next as Update<any>;
 
     let newBaseState = baseState;

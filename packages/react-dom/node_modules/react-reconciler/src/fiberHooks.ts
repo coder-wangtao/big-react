@@ -137,7 +137,6 @@ function updateEffect(create: EffectCallback | void, deps: HookDeps | void) {
   const hook = updateWorkInProgressHook();
   const nextDeps = deps === undefined ? null : deps;
   let destroy: EffectCallback | void;
-
   if (currentHook !== null) {
     const prevEffect = currentHook.memoizedState as Effect;
     destroy = prevEffect.destroy;
@@ -150,8 +149,10 @@ function updateEffect(create: EffectCallback | void, deps: HookDeps | void) {
         return;
       }
     }
+
     // 浅比较 不相等
     (currentlyRenderingFiber as FiberNode).flags |= PassiveEffect;
+
     hook.memoizedState = pushEffect(
       Passive | HookHasEffect,
       create,
@@ -167,6 +168,11 @@ function areHookInputsEqual(nextDeps: HookDeps, prevDeps: HookDeps) {
   }
   for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
     if (Object.is(prevDeps[i], nextDeps[i])) {
+      // 它旨在提供比 === 更精确的相等性判断，尤其在处理特殊值时。
+      // 与 === 的区别：
+      // 处理 NaN：Object.is(NaN, NaN) 返回 true，而 NaN === NaN 是 false。
+      // 处理 0 和 -0：Object.is(0, -0) 返回 false，而 0 === -0 是 true。
+      // 其他情况与 === 一致。
       continue;
     }
     return false;

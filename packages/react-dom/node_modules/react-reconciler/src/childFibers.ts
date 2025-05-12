@@ -270,6 +270,7 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       newChild !== null &&
       newChild.type === REACT_FRAGMENT_TYPE &&
       newChild.key === null;
+
     if (isUnkeyedTopLevelFragment) {
       newChild = newChild.props.children;
     }

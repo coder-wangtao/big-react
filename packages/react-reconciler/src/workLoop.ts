@@ -46,7 +46,7 @@ import { unwindWork } from "./fiberUnwindWork";
 import { resetHooksOnUnwind } from "./fiberHooks";
 
 let workInProgress: FiberNode | null = null;
-let wipRootRenderLane: Lane = NoLane;
+let wipRootRenderLane: Lane = NoLane; //本次更新对应的lane
 let rootDoesHasPassiveEffects = false;
 
 type RootExitStatus = number;
@@ -91,8 +91,10 @@ export function scheduleUpdateOnFiber(fiber: FiberNode, lane: Lane) {
   // fiberRootNode
   //首屏渲染 穿进来的fiber是hostRootFiber
   //对于其他流程传入的fiber是当前更新的fiber,需要向上找到fiberRootNode
+
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
 
+  //将本次更新对应的lane记录在FiberRootNode
   markRootUpdated(root, lane);
 
   ensureRootIsScheduled(root);
@@ -373,7 +375,11 @@ function commitRoot(root: FiberRootNode) {
 }
 
 function flushPassiveEffects(pendingPassiveEffects: PendingPassiveEffects) {
+  //本次更新的任何create回调都必须在所有上一次更新的destory回调执行完后再执行
+  // 遍历effect
+  // debugger;
   let didFlushPassiveEffect = false;
+
   pendingPassiveEffects.unmount.forEach((effect) => {
     didFlushPassiveEffect = true;
     commitHookEffectListUnmount(Passive, effect);

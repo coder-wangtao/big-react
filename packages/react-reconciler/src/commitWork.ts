@@ -284,6 +284,7 @@ function commitPassiveEffect(
   type: keyof PendingPassiveEffects,
 ) {
   // update unmount
+  // debugger;
   if (
     fiber.tag !== FunctionComponent ||
     (type === "update" && (fiber.flags & PassiveEffect) === NoFlags)
@@ -473,7 +474,21 @@ const commitPlacement = (finishedWork: FiberNode) => {
  * 比如： <A/><B/> 其中：function B() {return <div/>} 所以A的hostSibling实际是B的child
  * 实际情况层级可能更深
  * 同时：一个fiber被标记Placement，那他就是不稳定的（他对应的DOM在本次commit阶段会移动），也不能作为hostSibling
+ * 对于插入操作，之前对应的dom的方法是parentNode.appendChild，现在为了实现移动操作，需要支持parentNode.insertBefore
+    parentNode.insertBefore需要知道目标兄弟Host节点:有两种情况
+    <A/><B/>
+    function B(){
+    return <div/>
+    }
+    这种情况需要向下遍历找到<div/>
+
+    <App/><div/>
+    function App(){
+    return <A/>
+    }
+    这种情况需要向上遍历找到<div/>
  */
+
 function getHostSibling(fiber: FiberNode) {
   let node: FiberNode = fiber;
 

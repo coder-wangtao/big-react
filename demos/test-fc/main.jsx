@@ -15,6 +15,7 @@ function App2() {
       <li key={222}>222</li>
     </>,
   ];
+
   const after = [
     <li key={4}>4</li>,
     <li key={2}>2</li>,
@@ -152,16 +153,36 @@ function effect4() {
 }
 
 function Bpp() {
-  useEffect(effect3);
-  useEffect(effect4);
+  useEffect(() => {
+    console.log("uesEffect回调333执行");
+    return () => {
+      console.log("effect 333 销毁");
+    };
+  }, []);
+  useEffect(() => {
+    console.log("uesEffect回调444执行");
+    return () => {
+      console.log("effect 444 销毁");
+    };
+  }, []);
   return <h1>Bpp</h1>;
 }
 
 function App1() {
   const [count, setCount] = useState(0);
 
-  useEffect(effect1);
-  useEffect(effect2);
+  useEffect(() => {
+    console.log("uesEffect回调111执行");
+    return () => {
+      console.log("effect 111 销毁");
+    };
+  }, []);
+  useEffect(() => {
+    console.log("uesEffect回调222执行");
+    return () => {
+      console.log("effect 222 销毁");
+    };
+  }, []);
 
   function handle_click() {
     setCount((count) => {

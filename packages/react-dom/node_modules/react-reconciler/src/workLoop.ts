@@ -53,9 +53,10 @@ type RootExitStatus = number;
 // 工作中的状态
 const RootInProgress = 0;
 // 并发中间状态
-const RootInComplete = 1;
+const RootInComplete = 1; //中断执行，还没有执行完
 // 完成状态
-const RootCompleted = 2;
+const RootCompleted = 2; //执行完了;
+
 // 未完成状态，不用进入commit阶段
 const RootDidNotComplete = 3;
 let workInProgressRootExitStatus: number = RootInProgress;
@@ -181,7 +182,8 @@ function performConcurrentWorkOnRoot(
   root: FiberRootNode,
   didTimeout: boolean,
 ): any {
-  // 保证useEffect回调执行
+  // 并发更新开始之前，保证useEffect回调执行
+  //useEffect回调执行了，触发了更新，然后更新的优先级比当前调度的优先级要高，当前的调度不应该执行了
   const curCallback = root.callbackNode;
   const didFlushPassiveEffect = flushPassiveEffects(root.pendingPassiveEffects);
   if (didFlushPassiveEffect) {
@@ -195,6 +197,7 @@ function performConcurrentWorkOnRoot(
   if (lane === NoLane) {
     return null;
   }
+
   const needSync = lane === SyncLane || didTimeout;
   // render阶段
   const exitStatus = renderRoot(root, lane, !needSync);
@@ -265,6 +268,7 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
   }
 
   if (wipRootRenderLane !== lane) {
+    //当前的render的lane 不等于 新传进来的lane，才需要初始化
     prepareFreshStack(root, lane);
   }
   do {
@@ -300,7 +304,7 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
     return workInProgressRootExitStatus;
   }
 
-  // 中断执行
+  // 中断执行 || render阶段执行完
   if (shouldTimeSlice && workInProgress !== null) {
     return RootInComplete;
   }
@@ -361,10 +365,12 @@ function commitRoot(root: FiberRootNode) {
 
     // 阶段2/3： mutation Placement
     //修改真实dom
+    //解绑之前的ref
     commitMutationEffects(finishedWork, root);
 
     root.current = finishedWork;
-    // 阶段3/3:Layout
+
+    // 阶段3/3:Layout useRef(绑定新ref) useLayoutEffect在这里执行
     commitLayoutEffects(finishedWork, root);
   } else {
     root.current = finishedWork;

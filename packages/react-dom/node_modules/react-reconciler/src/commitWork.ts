@@ -198,7 +198,6 @@ const commitLayoutEffectsOnFiber = (
   root: FiberRootNode,
 ) => {
   const { flags, tag } = finishedWork;
-
   if ((flags & Ref) !== NoFlags && tag === HostComponent) {
     // 绑定新的ref
     safelyAttachRef(finishedWork);

@@ -45,9 +45,10 @@ export const completeWork = (wip: FiberNode) => {
         // className style
         // markUpdate(wip);
         // 标记Ref
-        if (current.ref !== wip.ref) {
-          markRef(wip);
-        }
+        // if (current.ref !== wip.ref) {
+        //   debugger;
+        //   markRef(wip);
+        // }
       } else {
         // mount
         // 1. 构建DOM
@@ -57,9 +58,10 @@ export const completeWork = (wip: FiberNode) => {
         appendAllChildren(instance, wip);
         wip.stateNode = instance;
         // 标记Ref
-        if (wip.ref !== null) {
-          markRef(wip);
-        }
+        // if (wip.ref !== null) {
+        //   debugger;
+        //   markRef(wip);
+        // }
       }
       bubbleProperties(wip);
       return null;
@@ -87,6 +89,7 @@ export const completeWork = (wip: FiberNode) => {
       return null;
     case ContextProvider:
       const context = wip.type._context;
+      // debugger;
       popProvider(context);
       bubbleProperties(wip);
       return null;

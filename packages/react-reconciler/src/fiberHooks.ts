@@ -384,6 +384,7 @@ function updateTransition(): [boolean, (callback: () => void) => void] {
   return [isPending as boolean, start];
 }
 
+//res = useRef(null)
 function mountRef<T>(initialValue: T): { current: T } {
   const hook = mountWorkInProgressHook();
   const ref = { current: initialValue };
@@ -393,6 +394,7 @@ function mountRef<T>(initialValue: T): { current: T } {
 
 function updateRef<T>(initialValue: T): { current: T } {
   const hook = updateWorkInProgressHook();
+  // debugger;
   return hook.memoizedState;
 }
 

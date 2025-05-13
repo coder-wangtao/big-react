@@ -83,6 +83,7 @@ export function basicStateReducer<State>(
 }
 
 //消費update
+//TODO:重要很难
 export const processUpdateQueue = <State>(
   baseState: State,
   pendingUpdate: Update<State> | null,
@@ -114,6 +115,7 @@ export const processUpdateQueue = <State>(
 
     do {
       const updateLane = pending.lane;
+      //renderLane 是本次更新的lane
       if (!isSubsetOfLanes(renderLane, updateLane)) {
         // 优先级不够 被跳过
         const clone = createUpdate(pending.action, pending.lane);

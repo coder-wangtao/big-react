@@ -187,7 +187,7 @@ function updateContextProvider(wip: FiberNode, renderLane: Lane) {
   const newProps = wip.pendingProps;
   const oldProps = wip.memoizedProps;
   const newValue = newProps.value;
-
+  debugger;
   pushProvider(context, newValue);
 
   if (oldProps !== null) {
@@ -227,7 +227,6 @@ function updateFunctionComponent(
   //   bailoutHook(wip, renderLane);
   //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
   // }
-  // debugger;
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }
@@ -286,7 +285,6 @@ function reconcileChildren(wip: FiberNode, children?: ReactElementType) {
 
 function markRef(current: FiberNode | null, workInProgress: FiberNode) {
   const ref = workInProgress.ref;
-
   if (
     (current === null && ref !== null) ||
     (current !== null && current.ref !== ref)

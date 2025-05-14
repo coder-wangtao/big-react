@@ -472,6 +472,16 @@ function mountWorkInProgressHook(): Hook {
 }
 
 function use<T>(usable: Usable<T>): T {
+  //useable其实是一个Promise
+  //use接收到Promise,我们接收到Promise转化成Thenable提供内部使用
+
+  //Thenable
+  //untracked
+  //pending
+  //fulfilled -> resolve
+  //rejected -> reject
+
+  // debugger;
   if (usable !== null && typeof usable === "object") {
     if (typeof (usable as Thenable<T>).then === "function") {
       const thenable = usable as Thenable<T>;

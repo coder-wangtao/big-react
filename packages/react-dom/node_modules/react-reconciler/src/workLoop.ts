@@ -67,9 +67,9 @@ type SuspendedReason =
   | typeof SuspendedOnError
   | typeof SuspendedOnData
   | typeof SuspendedOnDeprecatedThrowPromise;
-const NotSuspended = 0;
+const NotSuspended = 0; //没有挂起
 const SuspendedOnError = 1;
-const SuspendedOnData = 2;
+const SuspendedOnData = 2; //由于请求数据挂起
 const SuspendedOnDeprecatedThrowPromise = 4;
 
 let workInProgressSuspendedReason: SuspendedReason = NotSuspended;
@@ -277,11 +277,11 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
         workInProgressSuspendedReason !== NotSuspended &&
         workInProgress !== null
       ) {
+        //unwind流程
         const thrownValue = workInProgressThrownValue;
 
         workInProgressSuspendedReason = NotSuspended;
         workInProgressThrownValue = null;
-
         throwAndUnwindWorkLoop(root, workInProgress, thrownValue, lane);
       }
 
@@ -296,6 +296,7 @@ function renderRoot(root: FiberRootNode, lane: Lane, shouldTimeSlice: boolean) {
         break;
         console.warn("break!");
       }
+      // debugger;
       handleThrow(root, e);
     }
   } while (true);
@@ -352,6 +353,7 @@ function commitRoot(root: FiberRootNode) {
       });
     }
   }
+  // debugger;
 
   // 判断是否存在3个子阶段需要执行的操作
   // root flags root subtreeFlags
@@ -479,6 +481,8 @@ function throwAndUnwindWorkLoop(
 }
 
 function unwindUnitOfWork(unitOfWork: FiberNode) {
+  // debugger;
+
   let incompleteWork: FiberNode | null = unitOfWork;
   do {
     const next = unwindWork(incompleteWork);

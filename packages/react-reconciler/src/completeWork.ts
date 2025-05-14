@@ -94,12 +94,15 @@ export const completeWork = (wip: FiberNode) => {
       bubbleProperties(wip);
       return null;
     case SuspenseComponent:
+      // debugger;
       popSuspenseHandler();
 
       const offscreenFiber = wip.child as FiberNode;
       const isHidden = offscreenFiber.pendingProps.mode === "hidden";
+
       const currentOffscreenFiber = offscreenFiber.alternate;
       if (currentOffscreenFiber !== null) {
+        //update
         const wasHidden = currentOffscreenFiber.pendingProps.mode === "hidden";
 
         if (isHidden !== wasHidden) {

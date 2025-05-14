@@ -34,15 +34,23 @@ function attachPingListener(
       if (pingCache !== null) {
         pingCache.delete(wakeable);
       }
+      // debugger;
+
       markRootUpdated(root, lane);
       markRootPinged(root, lane);
       ensureRootIsScheduled(root);
     }
+    // debugger;
+
     wakeable.then(ping, ping);
   }
 }
 
 export function throwException(root: FiberRootNode, value: any, lane: Lane) {
+  //Error Boundray
+
+  //thenable
+  // debugger;
   if (
     value !== null &&
     typeof value === "object" &&

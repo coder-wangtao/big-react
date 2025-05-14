@@ -50,40 +50,40 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   // bailout策略
   didReceiveUpdate = false;
   const current = wip.alternate;
+  //TODO:
+  // if (current !== null) {
+  //   const oldProps = current.memoizedProps;
+  //   const newProps = wip.pendingProps;
+  //   // 四要素～ props type
+  //   // {num: 0, name: 'cpn2'}
+  //   // {num: 0, name: 'cpn2'}
+  //   if (oldProps !== newProps || current.type !== wip.type) {
+  //     didReceiveUpdate = true;
+  //   } else {
+  //     // state context
+  //     const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
+  //       current,
+  //       renderLane,
+  //     );
 
-  if (current !== null) {
-    const oldProps = current.memoizedProps;
-    const newProps = wip.pendingProps;
-    // 四要素～ props type
-    // {num: 0, name: 'cpn2'}
-    // {num: 0, name: 'cpn2'}
-    if (oldProps !== newProps || current.type !== wip.type) {
-      didReceiveUpdate = true;
-    } else {
-      // state context
-      const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
-        current,
-        renderLane,
-      );
+  //     if (!hasScheduledStateOrContext) {
+  //       // 四要素～ state context
+  //       // 命中bailout
+  //       didReceiveUpdate = false;
 
-      if (!hasScheduledStateOrContext) {
-        // 四要素～ state context
-        // 命中bailout
-        didReceiveUpdate = false;
+  //       switch (wip.tag) {
+  //         case ContextProvider:
+  //           const newValue = wip.memoizedProps.value;
+  //           const context = wip.type._context;
+  //           pushProvider(context, newValue);
+  //           break;
+  //         // TODO Suspense
+  //       }
 
-        switch (wip.tag) {
-          case ContextProvider:
-            const newValue = wip.memoizedProps.value;
-            const context = wip.type._context;
-            pushProvider(context, newValue);
-            break;
-          // TODO Suspense
-        }
-
-        return bailoutOnAlreadyFinishedWork(wip, renderLane);
-      }
-    }
-  }
+  //       return bailoutOnAlreadyFinishedWork(wip, renderLane);
+  //     }
+  //   }
+  // }
 
   wip.lanes = NoLanes;
   // 比较，返回子fiberNode
@@ -144,7 +144,6 @@ function updateMemoComponent(wip: FiberNode, renderLane: Lane) {
       if (shallowEqual(prevProps, nextProps) && current.ref === wip.ref) {
         didReceiveUpdate = false;
         wip.pendingProps = prevProps;
-
         // 满足四要素
         wip.lanes = current.lanes;
         return bailoutOnAlreadyFinishedWork(wip, renderLane);
@@ -187,7 +186,7 @@ function updateContextProvider(wip: FiberNode, renderLane: Lane) {
   const newProps = wip.pendingProps;
   const oldProps = wip.memoizedProps;
   const newValue = newProps.value;
-  debugger;
+  // debugger;
   pushProvider(context, newValue);
 
   if (oldProps !== null) {
@@ -304,35 +303,42 @@ function updateSuspenseComponent(workInProgress: FiberNode) {
   const current = workInProgress.alternate;
   const nextProps = workInProgress.pendingProps;
 
-  let showFallback = false;
+  let showFallback = false; //是否展示Fallback
   const didSuspend = (workInProgress.flags & DidCapture) !== NoFlags;
 
   if (didSuspend) {
     showFallback = true;
     workInProgress.flags &= ~DidCapture;
   }
-  const nextPrimaryChildren = nextProps.children;
-  const nextFallbackChildren = nextProps.fallback;
+  const nextPrimaryChildren = nextProps.children; //正常dom
+  const nextFallbackChildren = nextProps.fallback; //挂起dom
   pushSuspenseHandler(workInProgress);
-
+  // debugger;
   if (current === null) {
+    //mount
     if (showFallback) {
+      //挂起
       return mountSuspenseFallbackChildren(
         workInProgress,
         nextPrimaryChildren,
         nextFallbackChildren,
       );
     } else {
+      //正常
+      //TODO:完成
       return mountSuspensePrimaryChildren(workInProgress, nextPrimaryChildren);
     }
   } else {
+    //update
     if (showFallback) {
+      //挂起
       return updateSuspenseFallbackChildren(
         workInProgress,
         nextPrimaryChildren,
         nextFallbackChildren,
       );
     } else {
+      //正常
       return updateSuspensePrimaryChildren(workInProgress, nextPrimaryChildren);
     }
   }
@@ -414,6 +420,7 @@ function updateSuspenseFallbackChildren(
   primaryChildren: any,
   fallbackChildren: any,
 ) {
+  //之前的的fiber
   const current = workInProgress.alternate as FiberNode;
   const currentPrimaryChildFragment = current.child as FiberNode;
   const currentFallbackChildFragment: FiberNode | null =
@@ -423,10 +430,12 @@ function updateSuspenseFallbackChildren(
     mode: "hidden",
     children: primaryChildren,
   };
+
   const primaryChildFragment = createWorkInProgress(
     currentPrimaryChildFragment,
     primaryChildProps,
   );
+
   let fallbackChildFragment;
 
   if (currentFallbackChildFragment !== null) {
@@ -439,6 +448,7 @@ function updateSuspenseFallbackChildren(
     fallbackChildFragment = createFiberFromFragment(fallbackChildren, null);
     fallbackChildFragment.flags |= Placement;
   }
+
   fallbackChildFragment.return = workInProgress;
   primaryChildFragment.return = workInProgress;
   primaryChildFragment.sibling = fallbackChildFragment;

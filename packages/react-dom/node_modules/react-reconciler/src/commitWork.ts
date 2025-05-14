@@ -74,7 +74,6 @@ const commitMutationEffectsOnFiber = (
 ) => {
   const { flags, tag } = finishedWork;
   const current = finishedWork.alternate;
-
   if ((flags & Placement) !== NoFlags) {
     commitPlacement(finishedWork);
     finishedWork.flags &= ~Placement;
@@ -106,6 +105,8 @@ const commitMutationEffectsOnFiber = (
     }
   }
   if ((flags & Visibility) !== NoFlags && tag === OffscreenComponent) {
+    // debugger;
+
     const isHidden = finishedWork.pendingProps.mode === "hidden";
     hideOrUnhideAllChildren(finishedWork, isHidden);
     finishedWork.flags &= ~Visibility;
@@ -168,6 +169,26 @@ function findHostSubtreeRoot(
     node = node.sibling;
   }
 }
+
+//处理Visibility的时候需要找到所有子树顶层Host节点
+// function Cpn(){
+//   return (
+//     <p>123</p>
+//   )
+// }
+// 情况1：一个host节点
+// <Suspense fallback={<div>loading...</div>}>
+//   <Cpn/>
+// </Suspense>
+// 情况1：多个host节点
+
+// 情况2：多个host节点
+// <Suspense fallback={<div>loading...</div>}>
+//   <Cpn/>
+//   <div>
+//    <p>你好</p>
+//   </div>
+// </Suspense>
 
 function hideOrUnhideAllChildren(finishedWork: FiberNode, isHidden: boolean) {
   findHostSubtreeRoot(finishedWork, (hostRoot) => {

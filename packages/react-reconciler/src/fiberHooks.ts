@@ -35,6 +35,7 @@ let renderLane: Lane = NoLane;
 
 const { currentDispatcher, currentBatchConfig } = internals;
 
+//useContext 也不能再条件语句中使用，如果想在条件语句中使用，可以用use
 function readContext<Value>(context: ReactContext<Value>): Value {
   const consumer = currentlyRenderingFiber as FiberNode;
   return readContextOrigin(consumer, context);
@@ -103,6 +104,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   useEffect: mountEffect,
   useTransition: mountTransition,
   useRef: mountRef,
+  ///useContext 也不能再条件语句中使用，如果想在条件语句中使用，可以用use
   useContext: readContext,
   use,
   useMemo: mountMemo,
@@ -114,6 +116,7 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   useEffect: updateEffect,
   useTransition: updateTransition,
   useRef: updateRef,
+  //useContext 也不能再条件语句中使用，如果想在条件语句中使用，可以用use
   useContext: readContext,
   use,
   useMemo: updateMemo,

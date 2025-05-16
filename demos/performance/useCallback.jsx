@@ -15,14 +15,14 @@ export default function App() {
   );
 }
 
-const Cpn = memo(function ({ onClick }) {
+const Cpn = function ({ onClick }) {
   console.log("Cpn render");
   return (
     <div onClick={() => onClick()}>
       <Child />
     </div>
   );
-});
+};
 
 function Child() {
   console.log("Child render");

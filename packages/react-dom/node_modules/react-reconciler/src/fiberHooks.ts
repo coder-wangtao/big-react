@@ -264,6 +264,7 @@ function updateState<State>(): [State, Dispatch<State>] {
     } = processUpdateQueue(baseState, baseQueue, renderLane, (update) => {
       const skippedLane = update.lane;
       const fiber = currentlyRenderingFiber as FiberNode;
+
       // NoLanes
       fiber.lanes = mergeLanes(fiber.lanes, skippedLane);
     });
@@ -418,7 +419,7 @@ function dispatchSetState<State>(
   //并发更新的基础
   const lane = requestUpdateLane();
   const update = createUpdate(action, lane);
-
+  // debugger;
   // eager策略
   const current = fiber.alternate;
   if (
@@ -433,6 +434,7 @@ function dispatchSetState<State>(
     update.eagerState = eagerState;
 
     if (Object.is(currentState, eagerState)) {
+      // debugger;
       enqueueUpdate(updateQueue, update, fiber, NoLane);
       // 命中eagerState
       if (__DEV__) {

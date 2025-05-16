@@ -48,43 +48,48 @@ export function markWipReceivedUpdate() {
 //
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   // bailout策略
+  //命中性能优化的组件可以不用 reconcile 生成 wip.child,而是直接复用上次更新生成的 wip.child
+
   didReceiveUpdate = false;
   const current = wip.alternate;
   //TODO:
-  // if (current !== null) {
-  //   const oldProps = current.memoizedProps;
-  //   const newProps = wip.pendingProps;
-  //   // 四要素～ props type
-  //   // {num: 0, name: 'cpn2'}
-  //   // {num: 0, name: 'cpn2'}
-  //   if (oldProps !== newProps || current.type !== wip.type) {
-  //     didReceiveUpdate = true;
-  //   } else {
-  //     // state context
-  //     const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
-  //       current,
-  //       renderLane,
-  //     );
+  // debugger;
+  if (current !== null) {
+    const oldProps = current.memoizedProps;
+    const newProps = wip.pendingProps;
+    // 四要素～ props type
+    // {num: 0, name: 'cpn2'}
+    // {num: 0, name: 'cpn2'}
+    if (oldProps !== newProps || current.type !== wip.type) {
+      didReceiveUpdate = true;
+    } else {
+      // state context
+      const hasScheduledStateOrContext = checkScheduledUpdateOrContext(
+        current,
+        renderLane,
+      );
 
-  //     if (!hasScheduledStateOrContext) {
-  //       // 四要素～ state context
-  //       // 命中bailout
-  //       didReceiveUpdate = false;
+      if (!hasScheduledStateOrContext) {
+        // 四要素～ state context
+        // 命中bailout
+        didReceiveUpdate = false;
 
-  //       switch (wip.tag) {
-  //         case ContextProvider:
-  //           const newValue = wip.memoizedProps.value;
-  //           const context = wip.type._context;
-  //           pushProvider(context, newValue);
-  //           break;
-  //         // TODO Suspense
-  //       }
+        switch (wip.tag) {
+          case ContextProvider:
+            const newValue = wip.memoizedProps.value;
+            const context = wip.type._context;
+            pushProvider(context, newValue);
+            break;
+          // TODO Suspense
+        }
 
-  //       return bailoutOnAlreadyFinishedWork(wip, renderLane);
-  //     }
-  //   }
-  // }
+        return bailoutOnAlreadyFinishedWork(wip, renderLane);
+      }
+    }
+  }
 
+  // 在beginWork中根据update计算state
+  // 代表update已经消费完了
   wip.lanes = NoLanes;
   // 比较，返回子fiberNode
   switch (wip.tag) {
@@ -140,6 +145,8 @@ function updateMemoComponent(wip: FiberNode, renderLane: Lane) {
 
     // state context
     if (!checkScheduledUpdateOrContext(current, renderLane)) {
+      // debugger;
+
       // 浅比较props
       if (shallowEqual(prevProps, nextProps) && current.ref === wip.ref) {
         didReceiveUpdate = false;
@@ -172,11 +179,19 @@ function checkScheduledUpdateOrContext(
   current: FiberNode,
   renderLane: Lane,
 ): boolean {
+  //在执行bailout之前我们必须检查是否有待处理的更新或context
   const updateLanes = current.lanes;
 
+  //每一个update就对应一个优先级，也时间就是对应一个lane,
+  //fiber.lanes就保存一个fiberNode所有未执行更新对应的lane
+  //判断fiber.lanes是不是等于Nolane，就可以知道当前fiber是否存在未执行的更新，也就是未执行的update
+  //fiber.childlanes，保存一个FiberNode子树中，所有未执行更新对应的lane
+
   if (includeSomeLanes(updateLanes, renderLane)) {
+    //存在更新
     return true;
   }
+  //不存在更新
   return false;
 }
 
@@ -188,7 +203,7 @@ function updateContextProvider(wip: FiberNode, renderLane: Lane) {
   const newValue = newProps.value;
   // debugger;
   pushProvider(context, newValue);
-
+  // debugger;
   if (oldProps !== null) {
     const oldValue = oldProps.value;
 
@@ -196,6 +211,7 @@ function updateContextProvider(wip: FiberNode, renderLane: Lane) {
       Object.is(oldValue, newValue) &&
       oldProps.children === newProps.children
     ) {
+      // debugger;
       return bailoutOnAlreadyFinishedWork(wip, renderLane);
     } else {
       propagateContextChange(wip, context, renderLane);
@@ -222,10 +238,12 @@ function updateFunctionComponent(
   // render
   const nextChildren = renderWithHooks(wip, Component, renderLane);
   const current = wip.alternate;
-  // if (current !== null && !didReceiveUpdate) {
-  //   bailoutHook(wip, renderLane);
-  //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
-  // }
+  if (current !== null && !didReceiveUpdate) {
+    // debugger;
+
+    bailoutHook(wip, renderLane);
+    return bailoutOnAlreadyFinishedWork(wip, renderLane);
+  }
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }
@@ -250,9 +268,10 @@ function updateHostRoot(wip: FiberNode, renderLane: Lane) {
   }
 
   const nextChildren = wip.memoizedState; //子对应的reactElement
-  // if (prevChildren === nextChildren) {
-  //   return bailoutOnAlreadyFinishedWork(wip, renderLane);
-  // }
+  if (prevChildren === nextChildren) {
+    // debugger;
+    return bailoutOnAlreadyFinishedWork(wip, renderLane);
+  }
   reconcileChildren(wip, nextChildren);
   return wip.child;
 }

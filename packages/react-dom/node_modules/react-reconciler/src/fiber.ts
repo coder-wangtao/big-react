@@ -23,9 +23,12 @@ import {
 } from "shared/ReactSymbol";
 import { ContextItem } from "./fiberContext";
 
+//是当前函数组件以来的context，形成一个单向链表，这些context之间本身没有什么关系
 interface FiberDependencies<Value> {
+  //单向链表
   firstContext: ContextItem<Value> | null;
-  lanes: Lanes;
+  lanes: Lanes; //某个更新，会导致某个context变化，dependencies的lanes就会增加这个更新对应的lane，
+  //我们就可以通过查找某个Fiber下dependencies的lane,我们就知道当前fiber中的context存不存在待执行的更新
 }
 
 export class FiberNode {

@@ -10,6 +10,7 @@ export interface Dispatcher {
   use: <T>(usable: Usable<T>) => T;
   useMemo: <T>(nextCreate: () => T, deps: HookDeps | undefined) => T;
   useCallback: <T>(callback: T, deps: HookDeps | undefined) => T;
+  useSyncExternalStore: (subscribe: () => void, deps: () => void) => void;
 }
 
 export type Dispatch<State> = (action: Action<State>) => void;

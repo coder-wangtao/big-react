@@ -8,6 +8,7 @@ import {
   Lane,
   NoLane,
   NoLanes,
+  SyncLane,
   mergeLanes,
   removeLanes,
   requestUpdateLane,
@@ -22,7 +23,10 @@ import {
   Update,
   UpdateQueue,
 } from "./updateQueue";
-import { scheduleUpdateOnFiber } from "./workLoop";
+import {
+  markUpdateLaneFromFiberToRoot,
+  scheduleUpdateOnFiber,
+} from "./workLoop";
 import { trackUsedThenable } from "./thenable";
 import { REACT_CONTEXT_TYPE } from "shared/ReactSymbol";
 import { markWipReceivedUpdate } from "./beginWork";
@@ -109,6 +113,7 @@ const HooksDispatcherOnMount: Dispatcher = {
   use,
   useMemo: mountMemo,
   useCallback: mountCallback,
+  useSyncExternalStore: mountSyncExternalStore,
 };
 
 const HooksDispatcherOnUpdate: Dispatcher = {
@@ -121,7 +126,23 @@ const HooksDispatcherOnUpdate: Dispatcher = {
   use,
   useMemo: updateMemo,
   useCallback: updateCallback,
+  useSyncExternalStore: updateSyncExternalStore,
 };
+
+// 为了便于理解，这里不讨论传入服务端渲染调用方法的情况
+function mountSyncExternalStore(subscribe: any, getSnapshot: any) {
+  // 创建Hook对象，构建Hook单链表
+  const hook = mountWorkInProgressHook();
+  // 监听subscribe函数，在DOM更新阶段调用subscribe方法
+  mountEffect(
+    subscribeToStore.bind(null, currentlyRenderingFiber, hook, subscribe),
+    [subscribe],
+  );
+  // 调用getSnapshot方法获取初始值
+  const nextSnapshot = getSnapshot();
+  hook.memoizedState = [nextSnapshot, getSnapshot];
+  return nextSnapshot;
+}
 
 function mountEffect(create: EffectCallback | void, deps: HookDeps | void) {
   const hook = mountWorkInProgressHook();
@@ -134,6 +155,45 @@ function mountEffect(create: EffectCallback | void, deps: HookDeps | void) {
     undefined,
     nextDeps,
   );
+}
+
+function forceStoreRerender(fiber: any) {
+  // 获取FiberRootNode对象
+  const root = markUpdateLaneFromFiberToRoot(fiber, SyncLane);
+  // 修改FiberNode节点优先级
+  fiber.lanes |= SyncLane;
+  if (fiber.alternate !== null) fiber.alternate.lanes |= SyncLane;
+  // 触发更新渲染
+  scheduleUpdateOnFiber(root, SyncLane);
+}
+
+// 调用subscribe方法，并获取返回的destroy方法
+function subscribeToStore(fiber: any, hook: any, subscribe: any) {
+  // 当触发监听事件时，会调用callback方法
+  const callback = () => {
+    const [prevSnapshot, getSnapshot] = hook.memoizedState;
+    const nextSnapshot = getSnapshot();
+    // 比对新旧值是否相同，如果不相同更新Hook对象memoizedState属性，触发更新渲染
+    if (nextSnapshot !== prevSnapshot) {
+      hook.memoizedState[0] = nextSnapshot;
+      forceStoreRerender(fiber);
+    }
+  };
+  return subscribe(callback);
+}
+
+// 为了便于理解，这里不讨论传入服务端渲染调用方法的情况
+function updateSyncExternalStore(subscribe: any, getSnapshot: any) {
+  // 创建Hook对象，复制旧Hook对象属性值，构建Hook链表
+  const hook = updateWorkInProgressHook();
+  // 由于getSnapshot方法可能发生变更，所以需要重新赋值确保调用最新的getSnapshot方法
+  hook.memoizedState[1] = getSnapshot;
+  // 监听subscribe方法，如果发生变更，会在DOM更新阶段重新执行subscribe方法
+  updateEffect(
+    subscribeToStore.bind(null, currentlyRenderingFiber, hook, subscribe),
+    [subscribe],
+  );
+  return hook.memoizedState[0];
 }
 
 function updateEffect(create: EffectCallback | void, deps: HookDeps | void) {

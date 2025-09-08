@@ -46,7 +46,7 @@ export class FiberNode {
 
   memoizedProps: Props | null;
   memoizedState: any;
-  alternate: FiberNode | null;
+  alternate: FiberNode | null; //双缓存
 
   //副作用
   flags: Flags;

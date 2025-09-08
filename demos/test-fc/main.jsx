@@ -41,19 +41,30 @@ function App2() {
 }
 
 function App() {
-  const [arr, setArr] = useState(["a", "b", "c"]);
+  // const [arr, setArr] = useState(["a", "b", "c"]);
 
-  function handleClick() {
-    setArr(["c", "b", "a"]);
-  }
+  // function handleClick() {
+  //   setArr(["c", "b", "a"]);
+  // }
 
+  // return (
+  //   <div>
+  //     <h2 onClick={handleClick}>点我改变数组</h2>
+  //     <ul>
+  //       {arr.map((item) => {
+  //         return <li key={item}>{item}</li>;
+  //       })}
+  //     </ul>
+  //   </div>
+  // );
   return (
     <div>
-      <h2 onClick={handleClick}>点我改变数组</h2>
+      <span>span</span>
+      <p>p</p>
       <ul>
-        {arr.map((item) => {
-          return <li key={item}>{item}</li>;
-        })}
+        <li>1</li>
+        <li>2</li>
+        <li>3</li>
       </ul>
     </div>
   );
@@ -228,4 +239,4 @@ function Child2() {
   return <span>TRUE</span>;
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App10 />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);

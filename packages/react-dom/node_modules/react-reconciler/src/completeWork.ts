@@ -32,10 +32,8 @@ function markRef(fiber: FiberNode) {
 
 export const completeWork = (wip: FiberNode) => {
   // 递归中的归
-
   const newProps = wip.pendingProps;
   const current = wip.alternate;
-
   switch (wip.tag) {
     case HostComponent:
       if (current !== null && wip.stateNode) {

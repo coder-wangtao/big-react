@@ -12,6 +12,7 @@ export type Lane = number;
 export type Lanes = number;
 
 //lane 是一个 32 位的二进制数，每个二进制位表示 1 种优先级，优先级最高的 SyncLane 为 1，其次为 2、4、8 等
+//更加灵活
 export const SyncLane = 0b00001; //1  同步优先级
 export const NoLane = 0b00000; //0
 export const NoLanes = 0b00000; //0
@@ -35,12 +36,11 @@ export function requestUpdateLane() {
 
 //在 React 中，lane 是用来标识更新优先级的位掩码，它可以在频繁运算的时候占用内存少，计算速度快。
 // 每个 lane 代表一种优先级级别，React 可以同时处理多个 lane，通过这种方式来管理不同优先级的任务。
+
 //从 lanes 中找出最高优先级的 lane
 export function getHighestPriorityLane(lanes: Lanes): Lane {
   return lanes & -lanes;
 }
-
-0b0000000011111111111111110000000;
 
 //lane | lane：用于将多个 lane 合并为一个 lanes（取并集）
 //lane & lane  用来判断是不是同一个 lane（是否有相同的位为 1，取交集）

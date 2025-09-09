@@ -53,7 +53,7 @@ export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   didReceiveUpdate = false;
   const current = wip.alternate;
   //TODO:
-  // debugger;
+  debugger;
   if (current !== null) {
     const oldProps = current.memoizedProps;
     const newProps = wip.pendingProps;

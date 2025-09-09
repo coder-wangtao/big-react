@@ -41,30 +41,19 @@ function App2() {
 }
 
 function App() {
-  // const [arr, setArr] = useState(["a", "b", "c"]);
+  const [arr, setArr] = useState(["a", "b", "c"]);
 
-  // function handleClick() {
-  //   setArr(["c", "b", "a"]);
-  // }
+  function handleClick() {
+    setArr(["c", "b", "a"]);
+  }
 
-  // return (
-  //   <div>
-  //     <h2 onClick={handleClick}>点我改变数组</h2>
-  //     <ul>
-  //       {arr.map((item) => {
-  //         return <li key={item}>{item}</li>;
-  //       })}
-  //     </ul>
-  //   </div>
-  // );
   return (
     <div>
-      <span>span</span>
-      <p>p</p>
+      <h2 onClick={handleClick}>点我改变数组</h2>
       <ul>
-        <li>1</li>
-        <li>2</li>
-        <li>3</li>
+        {arr.map((item) => {
+          return <li key={item}>{item}</li>;
+        })}
       </ul>
     </div>
   );

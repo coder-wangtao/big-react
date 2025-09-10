@@ -41,10 +41,10 @@ function App2() {
 }
 
 function App() {
-  const [arr, setArr] = useState(["a", "b", "c"]);
+  const [arr, setArr] = useState(["1", "2"]);
 
   function handleClick() {
-    setArr(["c", "b", "a"]);
+    setArr(["1", "2", "3"]);
   }
 
   return (

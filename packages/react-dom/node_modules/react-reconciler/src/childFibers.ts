@@ -141,7 +141,6 @@ function ChildReconciler(shouldTrackEffects: boolean) {
       existingChildren.set(keyToUse, current);
       current = current.sibling;
     }
-
     for (let i = 0; i < newChild.length; i++) {
       // 2.遍历newChild，寻找是否可复用
       const after = newChild[i];

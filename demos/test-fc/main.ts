@@ -11,7 +11,7 @@ import {
 } from "../../packages/scheduler/Scheduler";
 
 import "./style.css";
-const button = document.querySelector("b utton");
+const button = document.querySelector("button");
 const root = document.querySelector("#root");
 
 type Priority =

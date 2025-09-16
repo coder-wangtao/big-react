@@ -352,25 +352,3 @@ function handleTimeout(currentTime: any) {
     }
   }
 }
-
-//普通任务
-// 当创建一个调度任务的时候（unstable_scheduleCallback），会传入优先级（priorityLevel）、执行函数（callback），可选项（options），
-// React 会根据任务优先级创建 task 对象，并根据可选项中的 delay 参数判断是将任务放到普通任务队列（taskQueue），还是延时任务队列（timerQueue）。
-// 当放到普通任务队列后，便会执行 requestHostCallback(flushWork)，requestHostCallback 的作用是借助 Message Channel 将线程让出来，
-// 让浏览器可以处理动画或者用户输入，当浏览器空闲的时候，便会执行 flushWork 函数，flushWork 的作用是执行任务队列里的任务，它会执行 advanceTimers，
-// 不断地将 timerQueue 中到期的任务添加到 taskQueue，它会执行 taskQueue 中优先级最高的任务，当任务函数执行完毕之后，它会判断过了多久，
-// 如果时间还没有到一个切片时间（5ms），便会执行队列里的下个优先级最高的任务，一直到超出切片时间，当超出时间之后，React 会让出线程，
-// 等待浏览器下次继续执行 flushWork，也就是再次遍历执行任务队列，直到任务队列中的任务全部完成。
-
-//延时任务
-// 在 Scheduler 中，最多只有一个定时器在执行（requestHostTimeout），时间为所有延时任务中延时时间最小的那个，如果创建的新任务是最小的那个，
-// 那就取消掉之前的，使用新任务的延时时间再创建一个定时器，定时器到期后，我们会将该任务安排调度（handleTimeout）
-// 但这个逻辑只在 taskQueue 没有任务的时候，如果 taskQueue 有任务呢？
-// 如果 taskQueue 有任务，在每个任务完成的时候，React 都会调用 advanceTimers ，检查 timerQueue 中到期的延时任务，将其转移到 taskQueue 中，
-// 所以没有必要再检查一遍了。
-// 总结一下：如果 taskQueue 为空，我们的延时任务会创建最多一个定时器，在定时器到期后，将该任务安排调度（将任务添加到 taskQueue 中）。
-// 如果 taskQueue 列表不为空，我们在每个普通任务执行完后都会检查是否有任务到期了，然后将到期的任务添加到 taskQueue 中。
-// 但这个逻辑里有一个漏洞：
-// 我们新添加一个普通任务，假设该任务执行时间为 5ms，再添加一个延时任务，delay 为 10ms。
-// 因为创建延时任务的时候 taskQueue 中有值，所以不会创建定时器，当普通任务执行完毕后，我们执行 advanceTimers，因为延时任务没有到期，
-// 所以也不会添加到 taskQueue 中，那么这个延时任务就不会有定时器让它准时进入调度。如果没有新的任务出现，它永远都不会执行。

@@ -1,7 +1,8 @@
 // 引入最小堆封装代码
 import { push, pop, peek } from "./ScheduleMinHeap.js";
 
-// 浏览器提供的 API，获取从 time origin（当前文档生命周期的开始节点时间） 之后到当前调用时经过的时间，它以一个恒定的速率慢慢增加的，不会受到系统时间的影响，具体参考：https://juejin.cn/post/7171633315336683528
+// 浏览器提供的 API，获取从 time origin（当前文档生命周期的开始节点时间） 之后到当前调用时经过的时间，它以一个恒定的速率慢慢增加的，
+// 不会受到系统时间的影响，具体参考：https://juejin.cn/post/7171633315336683528
 let getCurrentTime = () => performance.now();
 
 // Scheduler 优先级划分，数字越小优先级越高，0 表示没有优先级

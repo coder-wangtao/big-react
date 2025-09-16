@@ -22,6 +22,7 @@ let prevContextValue: any = null;
 const prevContextValueStack: any[] = [];
 
 export function pushProvider<T>(context: ReactContext<T>, newValue: T) {
+  debugger;
   prevContextValueStack.push(prevContextValue);
 
   prevContextValue = context._currentValue;

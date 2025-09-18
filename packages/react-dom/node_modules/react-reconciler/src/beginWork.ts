@@ -49,7 +49,7 @@ export function markWipReceivedUpdate() {
 export const beginWork = (wip: FiberNode, renderLane: Lane) => {
   // bailout策略
   //命中性能优化的组件可以不用 reconcile 生成 wip.child,而是直接复用上次更新生成的 wip.child
-
+  // debugger;
   didReceiveUpdate = false;
   const current = wip.alternate;
   //TODO:

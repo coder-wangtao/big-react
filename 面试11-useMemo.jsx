@@ -67,6 +67,9 @@ const ExpensiveSubtreeTwo = memo(() => {
 });
 
 //3.手动bailout ExpensiveSubtreeThree满足了bailout四要素
+// const showHeader = useMemo(() => {
+//     direction === 'horizontal' && header;
+// }, [direction, header]);
 function AppThree() {
   const [num, update] = useState(0);
   console.log("App render ", num);
